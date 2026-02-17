@@ -30,6 +30,7 @@ interface BountyData {
   niche: string | null;
   requirements: string | null;
   budget: number;
+  payPerImpression: string | null;
   deadline: string;
   allowResubmission: boolean;
   status: string;
@@ -89,6 +90,7 @@ export default function BountyDetail() {
           niche: dummy.niche,
           requirements: dummy.requirements.join("\n"),
           budget: dummy.budget,
+          payPerImpression: dummy.payPerImpression,
           deadline: dummy.deadline,
           status: "open",
           allowResubmission: false,
@@ -301,6 +303,20 @@ export default function BountyDetail() {
                       <p className="text-text font-extralight text-3xl mt-1">
                         ${bounty.budget.toLocaleString()}
                       </p>
+                      {bounty.payPerImpression && (
+                        <div className="mt-2 flex items-center gap-2">
+                          <span
+                            className="font-mono text-[11px] px-2 py-1"
+                            style={{
+                              background: "var(--accent)",
+                              color: "#fff",
+                              borderRadius: "2px",
+                            }}
+                          >
+                            + {bounty.payPerImpression} impressions
+                          </span>
+                        </div>
+                      )}
                     </div>
 
                     <div

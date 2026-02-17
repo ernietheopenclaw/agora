@@ -8,6 +8,7 @@ export interface Bounty {
   platform: string;
   contentType: string;
   budget: number;
+  payPerImpression: string;
   deadline: string;
   niche: string;
   description: string;
@@ -24,6 +25,7 @@ export const DUMMY_BOUNTIES: Bounty[] = [
     platform: "Instagram",
     contentType: "Reel",
     budget: 500,
+    payPerImpression: "$2.50/1K",
     deadline: "2026-03-15",
     niche: "Fashion",
     description: "Create an authentic unboxing reel showcasing our new summer linen collection.",
@@ -45,6 +47,7 @@ export const DUMMY_BOUNTIES: Bounty[] = [
     platform: "TikTok",
     contentType: "Video",
     budget: 350,
+    payPerImpression: "$2.00/1K",
     deadline: "2026-03-10",
     niche: "Food & Drink",
     description: "Film a cozy morning routine naturally featuring our new ceremonial matcha.",
@@ -66,6 +69,7 @@ export const DUMMY_BOUNTIES: Bounty[] = [
     platform: "YouTube",
     contentType: "Video",
     budget: 1200,
+    payPerImpression: "$3.50/1K",
     deadline: "2026-04-01",
     niche: "Tech",
     description: "Produce a detailed, honest review of the Nothing Ear (3) with real-world testing.",
@@ -87,6 +91,7 @@ export const DUMMY_BOUNTIES: Bounty[] = [
     platform: "TikTok",
     contentType: "Video",
     budget: 400,
+    payPerImpression: "$2.00/1K",
     deadline: "2026-03-08",
     niche: "Fitness",
     description: "Show off your gym outfit featuring our new Vital collection in a fit check video.",
@@ -108,6 +113,7 @@ export const DUMMY_BOUNTIES: Bounty[] = [
     platform: "YouTube",
     contentType: "Video",
     budget: 1500,
+    payPerImpression: "$4.00/1K",
     deadline: "2026-04-15",
     niche: "Travel",
     description: "Document a weekend trip using our Bigger Carry-On as your only luggage.",
@@ -129,6 +135,7 @@ export const DUMMY_BOUNTIES: Bounty[] = [
     platform: "Instagram",
     contentType: "Reel",
     budget: 300,
+    payPerImpression: "$1.50/1K",
     deadline: "2026-03-12",
     niche: "Beauty",
     description: "Create a calming PM skincare routine reel featuring our new retinol serum.",
@@ -150,6 +157,7 @@ export const DUMMY_BOUNTIES: Bounty[] = [
     platform: "TikTok",
     contentType: "Video",
     budget: 450,
+    payPerImpression: "$2.50/1K",
     deadline: "2026-03-20",
     niche: "Food & Drink",
     description: "Show a week of plant-based meal prep using Daily Harvest as a base.",
@@ -171,6 +179,7 @@ export const DUMMY_BOUNTIES: Bounty[] = [
     platform: "YouTube",
     contentType: "Video",
     budget: 800,
+    payPerImpression: "$3.00/1K",
     deadline: "2026-04-05",
     niche: "Tech",
     description: "Give a tour of your home office/productivity setup with Notion as your hub.",
@@ -192,6 +201,7 @@ export const DUMMY_BOUNTIES: Bounty[] = [
     platform: "Instagram",
     contentType: "Carousel",
     budget: 250,
+    payPerImpression: "$1.50/1K",
     deadline: "2026-03-18",
     niche: "Fashion",
     description: "Style 3 outfits using pieces from our new streetwear drop for a carousel post.",
@@ -213,6 +223,7 @@ export const DUMMY_BOUNTIES: Bounty[] = [
     platform: "TikTok",
     contentType: "Video",
     budget: 350,
+    payPerImpression: "$2.00/1K",
     deadline: "2026-03-25",
     niche: "Pets",
     description: "Film a fun dog park day featuring our harness, leash, and treat pouch.",
@@ -234,6 +245,7 @@ export const DUMMY_BOUNTIES: Bounty[] = [
     platform: "YouTube",
     contentType: "Video",
     budget: 600,
+    payPerImpression: "$2.50/1K",
     deadline: "2026-04-10",
     niche: "Lifestyle",
     description: "Share your monthly reading picks and how you track them on Literal.",
@@ -255,6 +267,7 @@ export const DUMMY_BOUNTIES: Bounty[] = [
     platform: "Twitter/X",
     contentType: "Thread",
     budget: 200,
+    payPerImpression: "$1.00/1K",
     deadline: "2026-03-05",
     niche: "Business",
     description: "Write an insightful thread about the future of remote work, tagging Deel naturally.",

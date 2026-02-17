@@ -50,6 +50,7 @@ model Bounty {
   niche             String?
   requirements      String?
   budget            Float
+  payPerImpression  String?
   creatorSlots      Int
   deadline          DateTime
   allowResubmission Boolean       @default(false)

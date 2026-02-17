@@ -27,6 +27,7 @@ function mapDummyToApiBounty(b: (typeof DUMMY_BOUNTIES)[number]) {
     niche: b.niche,
     requirements: b.requirements.join("\n"),
     budget: b.budget,
+    payPerImpression: b.payPerImpression,
     deadline: b.deadline,
     company: { companyName: b.brand, description: b.brandDescription },
   };
@@ -39,10 +40,20 @@ interface Bounty {
   platform: string;
   contentType: string;
   budget: number;
+  payPerImpression: string | null;
   deadline: string;
   niche: string | null;
   requirements: string | null;
   company: { companyName: string; description: string | null };
+}
+
+function extractFollowerReq(requirements: string | null): string | null {
+  if (!requirements) return null;
+  const match = requirements.match(/([\d,]+)\+?\s*(?:Instagram|TikTok|YouTube|Twitter|followers|subscribers)/i);
+  if (!match) return null;
+  const num = parseInt(match[1].replace(/,/g, ""));
+  if (num >= 1000) return `${Math.floor(num / 1000)}k+`;
+  return `${num}+`;
 }
 
 const ALL_PLATFORMS = ["Instagram", "TikTok", "YouTube", "Twitter/X"].sort();
@@ -113,6 +124,11 @@ function BountyCard({ bounty, isDark }: { bounty: Bounty; isDark: boolean }) {
         </div>
         <div className="text-right flex-shrink-0">
           <p className="text-text font-light text-xl md:text-2xl">${bounty.budget.toLocaleString()}</p>
+          {bounty.payPerImpression && (
+            <p className="font-mono text-[11px] text-accent-mid mt-0.5">
+              + {bounty.payPerImpression} impressions
+            </p>
+          )}
           <div className="flex items-center gap-1 mt-1 justify-end">
             <Clock size={11} className="text-text-muted" />
             <span className="font-mono text-[11px] text-text-muted">
@@ -134,6 +150,21 @@ function BountyCard({ bounty, isDark }: { bounty: Bounty; isDark: boolean }) {
             {bounty.niche}
           </span>
         )}
+        {(() => {
+          const followerReq = extractFollowerReq(bounty.requirements);
+          return followerReq ? (
+            <span
+              className="font-mono text-[10px] uppercase tracking-wider px-2 py-0.5"
+              style={{
+                background: isDark ? "rgba(255,255,255,0.04)" : "rgba(45,41,38,0.06)",
+                color: "var(--text-muted)",
+                borderRadius: isDark ? "1px" : "4px",
+              }}
+            >
+              {followerReq} followers
+            </span>
+          ) : null;
+        })()}
       </div>
     </Link>
   );
