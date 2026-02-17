@@ -100,7 +100,7 @@ export function Navbar() {
                 Dashboard
               </Link>
               <Link
-                href="#"
+                href="/settings"
                 onClick={() => setDropdownOpen(false)}
                 className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-text font-light transition-colors duration-150 hover:bg-[var(--border)]"
               >

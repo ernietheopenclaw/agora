@@ -36,6 +36,10 @@ model CreatorProfile {
   bio            String?
   socialLinks    String?       // JSON string
   followerCounts String?       // JSON string
+  tiktokHandle    String?
+  instagramHandle String?
+  youtubeHandle   String?
+  xHandle         String?
   user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   applications   Application[]
 }
