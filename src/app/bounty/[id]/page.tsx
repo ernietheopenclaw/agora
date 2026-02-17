@@ -7,6 +7,7 @@ import { AgoraLogo } from "../../../components/AgoraLogo";
 import { useParams } from "next/navigation";
 import { useState, useEffect } from "react";
 import { DUMMY_BOUNTIES } from "../../../data/bounties";
+import { useSession } from "next-auth/react";
 import {
   Sun,
   Moon,
@@ -19,6 +20,8 @@ import {
   Calendar,
   Building2,
   FileText,
+  Loader2,
+  Check,
 } from "lucide-react";
 import { BountyDetailSkeleton } from "../../../components/Skeletons";
 
@@ -72,11 +75,47 @@ export default function BountyDetail() {
   const isDark = theme === "dark";
   const params = useParams();
   const id = params.id as string;
+  const { data: session } = useSession();
 
   const [bounty, setBounty] = useState<BountyData | null>(null);
   const [relatedBounties, setRelatedBounties] = useState<BountyData[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+
+  // Application state
+  const [hasApplied, setHasApplied] = useState(false);
+  const [showApplyForm, setShowApplyForm] = useState(false);
+  const [applySubmitting, setApplySubmitting] = useState(false);
+  const [applyForm, setApplyForm] = useState({ pitch: "", proposedRate: "", portfolioLink: "" });
+
+  const isCreator = session?.user?.role === "CREATOR";
+  const isCompany = session?.user?.role === "COMPANY";
+
+  // Check if already applied
+  useEffect(() => {
+    if (!isCreator || !id) return;
+    fetch(`/api/bounties/${id}/application`)
+      .then((r) => r.json())
+      .then((data) => { if (data.applied) setHasApplied(true); })
+      .catch(() => {});
+  }, [id, isCreator]);
+
+  async function handleApply(e: React.FormEvent) {
+    e.preventDefault();
+    setApplySubmitting(true);
+    try {
+      const res = await fetch(`/api/bounties/${id}/apply`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(applyForm),
+      });
+      if (res.ok) {
+        setHasApplied(true);
+        setShowApplyForm(false);
+      }
+    } catch {}
+    setApplySubmitting(false);
+  }
 
   useEffect(() => {
     function fallbackToDummy() {
@@ -373,13 +412,112 @@ export default function BountyDetail() {
                       </div>
                     </div>
 
-                    <Link
-                      href={`/bounty/${bounty.id}/apply`}
-                      className="flex items-center justify-center gap-2 w-full px-5 py-3 text-sm font-medium rounded-sm transition-all hover:opacity-90"
-                      style={{ background: "var(--accent)", color: "#fff" }}
-                    >
-                      Apply Now <ArrowRight size={14} />
-                    </Link>
+                    {/* Apply section — only for creators */}
+                    {isCreator && !hasApplied && !showApplyForm && (
+                      <button
+                        onClick={() => setShowApplyForm(true)}
+                        className="flex items-center justify-center gap-2 w-full px-5 py-3 text-sm font-medium rounded-sm transition-all hover:opacity-90 cursor-pointer"
+                        style={{ background: "var(--accent)", color: "#fff" }}
+                      >
+                        Apply Now <ArrowRight size={14} />
+                      </button>
+                    )}
+                    {isCreator && hasApplied && (
+                      <button
+                        disabled
+                        className="flex items-center justify-center gap-2 w-full px-5 py-3 text-sm font-medium rounded-sm opacity-60 cursor-default"
+                        style={{ background: "var(--accent)", color: "#fff" }}
+                      >
+                        <Check size={14} /> Applied ✓
+                      </button>
+                    )}
+                    {isCreator && showApplyForm && !hasApplied && (
+                      <form onSubmit={handleApply} className="space-y-3 mt-2">
+                        <div>
+                          <label className="font-mono text-[11px] uppercase tracking-[0.15em] text-text-muted mb-1 block">
+                            Your Pitch
+                          </label>
+                          <textarea
+                            required
+                            rows={3}
+                            value={applyForm.pitch}
+                            onChange={(e) => setApplyForm((f) => ({ ...f, pitch: e.target.value }))}
+                            placeholder="Why are you a good fit?"
+                            className="w-full text-sm font-light text-text outline-none"
+                            style={{
+                              background: isDark ? "rgba(255,255,255,0.03)" : "var(--bg)",
+                              border: "1px solid var(--border)",
+                              borderRadius: isDark ? "2px" : "6px",
+                              padding: "8px 10px",
+                              resize: "vertical",
+                            }}
+                          />
+                        </div>
+                        <div>
+                          <label className="font-mono text-[11px] uppercase tracking-[0.15em] text-text-muted mb-1 block">
+                            Proposed Rate (optional)
+                          </label>
+                          <input
+                            type="number"
+                            min="0"
+                            value={applyForm.proposedRate}
+                            onChange={(e) => setApplyForm((f) => ({ ...f, proposedRate: e.target.value }))}
+                            placeholder="USD"
+                            className="w-full text-sm font-light text-text outline-none"
+                            style={{
+                              background: isDark ? "rgba(255,255,255,0.03)" : "var(--bg)",
+                              border: "1px solid var(--border)",
+                              borderRadius: isDark ? "2px" : "6px",
+                              padding: "8px 10px",
+                            }}
+                          />
+                        </div>
+                        <div>
+                          <label className="font-mono text-[11px] uppercase tracking-[0.15em] text-text-muted mb-1 block">
+                            Portfolio Link (optional)
+                          </label>
+                          <input
+                            type="url"
+                            value={applyForm.portfolioLink}
+                            onChange={(e) => setApplyForm((f) => ({ ...f, portfolioLink: e.target.value }))}
+                            placeholder="https://..."
+                            className="w-full text-sm font-light text-text outline-none"
+                            style={{
+                              background: isDark ? "rgba(255,255,255,0.03)" : "var(--bg)",
+                              border: "1px solid var(--border)",
+                              borderRadius: isDark ? "2px" : "6px",
+                              padding: "8px 10px",
+                            }}
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            type="submit"
+                            disabled={applySubmitting}
+                            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-sm transition-all hover:opacity-90 cursor-pointer disabled:opacity-50"
+                            style={{ background: "var(--accent)", color: "#fff" }}
+                          >
+                            {applySubmitting ? <Loader2 size={14} className="animate-spin" /> : "Submit Application"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setShowApplyForm(false)}
+                            className="px-3 py-2.5 text-sm font-light text-text-muted hover:text-text transition-colors cursor-pointer"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </form>
+                    )}
+                    {!isCreator && !isCompany && (
+                      <Link
+                        href="/login"
+                        className="flex items-center justify-center gap-2 w-full px-5 py-3 text-sm font-medium rounded-sm transition-all hover:opacity-90"
+                        style={{ background: "var(--accent)", color: "#fff" }}
+                      >
+                        Sign in to Apply <ArrowRight size={14} />
+                      </Link>
+                    )}
                   </div>
                 </div>
               </div>
