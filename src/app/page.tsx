@@ -12,7 +12,7 @@ import {
   X,
   ChevronDown,
 } from "lucide-react";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import Link from "next/link";
 
 interface Bounty {
@@ -188,37 +188,100 @@ function Dropdown({
   options,
   value,
   onChange,
+  isDark,
 }: {
   label: string;
   options: { label: string; value: string }[];
   value: string;
   onChange: (v: string) => void;
+  isDark?: boolean;
 }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  const selectedLabel = options.find((o) => o.value === value)?.label;
+
   return (
-    <div className="relative">
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="appearance-none cursor-pointer font-mono text-[11px] uppercase tracking-wider pl-3 pr-7 py-2 transition-all duration-200"
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex items-center gap-1.5 cursor-pointer font-mono text-[11px] uppercase tracking-wider px-3 transition-all duration-200"
         style={{
           background: "var(--surface)",
           color: value ? "var(--text)" : "var(--text-muted)",
-          border: "1px solid var(--border)",
-          borderRadius: "2px",
+          border: `1px solid ${open ? "var(--border-strong)" : "var(--border)"}`,
+          borderRadius: isDark ? "2px" : "8px",
           height: "36px",
+          boxShadow: !isDark ? "0 1px 3px rgba(45,41,38,0.04)" : "none",
         }}
       >
-        <option value="">{label}</option>
+        <span>{selectedLabel || label}</span>
+        <ChevronDown
+          size={12}
+          className="text-text-muted transition-transform duration-200"
+          style={{ transform: open ? "rotate(180deg)" : "rotate(0deg)" }}
+        />
+      </button>
+      <div
+        className="absolute left-0 top-[calc(100%+4px)] min-w-full z-50 overflow-hidden"
+        style={{
+          background: "var(--surface)",
+          border: open ? "1px solid var(--border-strong)" : "1px solid transparent",
+          borderRadius: isDark ? "2px" : "10px",
+          boxShadow: open
+            ? isDark
+              ? "0 8px 24px rgba(0,0,0,0.5)"
+              : "0 8px 32px rgba(45,41,38,0.12)"
+            : "none",
+          opacity: open ? 1 : 0,
+          transform: open ? "translateY(0) scaleY(1)" : "translateY(-4px) scaleY(0.96)",
+          transformOrigin: "top",
+          transition: "opacity 0.15s ease, transform 0.15s ease",
+          pointerEvents: open ? "auto" : "none",
+        }}
+      >
+        <div
+          className="font-mono text-[11px] uppercase tracking-wider px-3 cursor-pointer transition-colors duration-150"
+          style={{
+            height: "36px",
+            display: "flex",
+            alignItems: "center",
+            color: !value ? "var(--text)" : "var(--text-muted)",
+            background: !value ? (isDark ? "rgba(255,255,255,0.05)" : "var(--surface-raised, #e8e4df)") : "transparent",
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.background = isDark ? "rgba(255,255,255,0.05)" : "var(--surface-raised, #e8e4df)")}
+          onMouseLeave={(e) => (e.currentTarget.style.background = !value ? (isDark ? "rgba(255,255,255,0.05)" : "var(--surface-raised, #e8e4df)") : "transparent")}
+          onClick={() => { onChange(""); setOpen(false); }}
+        >
+          {label}
+        </div>
         {options.map((o) => (
-          <option key={o.value} value={o.value}>
+          <div
+            key={o.value}
+            className="font-mono text-[11px] uppercase tracking-wider px-3 cursor-pointer transition-colors duration-150"
+            style={{
+              height: "36px",
+              display: "flex",
+              alignItems: "center",
+              color: o.value === value ? "var(--accent-mid, var(--accent))" : "var(--text)",
+              background: o.value === value ? (isDark ? "rgba(255,255,255,0.05)" : "var(--surface-raised, #e8e4df)") : "transparent",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = isDark ? "rgba(255,255,255,0.05)" : "var(--surface-raised, #e8e4df)")}
+            onMouseLeave={(e) => (e.currentTarget.style.background = o.value === value ? (isDark ? "rgba(255,255,255,0.05)" : "var(--surface-raised, #e8e4df)") : "transparent")}
+            onClick={() => { onChange(o.value); setOpen(false); }}
+          >
             {o.label}
-          </option>
+          </div>
         ))}
-      </select>
-      <ChevronDown
-        size={12}
-        className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-text-muted"
-      />
+      </div>
     </div>
   );
 }
@@ -353,18 +416,21 @@ export default function Home() {
               options={PLATFORMS.map((p) => ({ label: p, value: p }))}
               value={platformFilter}
               onChange={setPlatformFilter}
+              isDark={isDark}
             />
             <Dropdown
               label="Niche"
               options={NICHES.map((n) => ({ label: n, value: n }))}
               value={nicheFilter}
               onChange={setNicheFilter}
+              isDark={isDark}
             />
             <Dropdown
               label="Pay Range"
               options={PAY_RANGES.slice(1).map((r, i) => ({ label: r.label, value: String(i + 1) }))}
               value={payRange > 0 ? String(payRange) : ""}
               onChange={(v) => setPayRange(v ? parseInt(v) : 0)}
+              isDark={isDark}
             />
             {activeFilterCount > 0 && (
               <button
