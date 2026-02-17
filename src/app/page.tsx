@@ -19,6 +19,7 @@ import Link from "next/link";
 import { AgoraLogo } from "../components/AgoraLogo";
 import { SpinningLogo } from "../components/SpinningLogo";
 import { BountyGridSkeleton } from "../components/Skeletons";
+import { Navbar } from "../components/Navbar";
 import { DUMMY_BOUNTIES } from "../data/bounties";
 
 function mapDummyToApiBounty(b: (typeof DUMMY_BOUNTIES)[number]) {
@@ -520,45 +521,7 @@ export default function Home() {
       <CanvasBackdrop />
       <div className="relative" style={{ zIndex: 1 }}>
         {/* Nav */}
-        <nav
-          className="fixed top-0 left-0 right-0 flex items-center justify-between px-6 py-4 md:px-12"
-          style={{
-            zIndex: 10,
-            background: "var(--bg)",
-            borderBottom: "1px solid var(--border)",
-          }}
-        >
-          <div className="flex items-center gap-2">
-            <SpinningLogo size={24} />
-            <span className="text-base font-light tracking-tight text-text">agora</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <a
-              href="/login"
-              className="text-sm text-text-muted hover:text-text transition-colors login-underline"
-            >
-              Log in
-            </a>
-            <a
-              href="/signup"
-              className="cta-party hidden sm:inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-sm transition-all"
-              style={{ color: "#fff" }}
-            >
-              Start Earning <ArrowRight size={13} />
-            </a>
-            <button
-              onClick={toggle}
-              className="flex items-center justify-center transition-colors cursor-pointer"
-              aria-label="Toggle theme"
-            >
-              {isDark ? (
-                <Sun size={16} strokeWidth={1.5} className="text-text-muted" />
-              ) : (
-                <Moon size={16} strokeWidth={1.5} fill="var(--text-muted)" className="text-text-muted" />
-              )}
-            </button>
-          </div>
-        </nav>
+        <Navbar />
 
         {/* Hero — compact */}
         <section className="pt-28 pb-10 md:pt-32 md:pb-14 px-6 md:px-12 lg:px-24">
