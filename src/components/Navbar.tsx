@@ -9,14 +9,25 @@ import { useState, useRef, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 
-function UserAvatar({ name }: { name: string }) {
+function UserAvatar({ name, image, size = 30 }: { name: string; image?: string | null; size?: number }) {
   const letter = (name || "?")[0].toUpperCase();
+  if (image) {
+    return (
+      <img
+        src={image}
+        alt={name}
+        className="rounded-full flex-shrink-0 object-cover"
+        style={{ width: size, height: size }}
+        referrerPolicy="no-referrer"
+      />
+    );
+  }
   return (
     <div
       className="flex items-center justify-center rounded-full text-xs font-medium text-white flex-shrink-0"
       style={{
-        width: 30,
-        height: 30,
+        width: size,
+        height: size,
         background: "var(--accent, #5aaca7)",
       }}
     >
@@ -46,6 +57,7 @@ export function Navbar() {
 
   const displayName = session?.user?.name || session?.user?.email || "";
   const truncatedName = displayName.length > 20 ? displayName.slice(0, 18) + "…" : displayName;
+  const userImage = session?.user?.image;
 
   return (
     <nav
@@ -77,7 +89,6 @@ export function Navbar() {
               {[
                 { href: "/", label: "Bounties", icon: Crosshair },
                 { href: "/stats", label: "Dashboard", icon: BarChart3 },
-                { href: "/profile", label: "Profile", icon: UserCircle },
               ].map(({ href, label, icon: Icon }) => {
                 const active = pathname === href;
                 return (
@@ -101,7 +112,7 @@ export function Navbar() {
                 onClick={() => setDropdownOpen(!dropdownOpen)}
                 className="flex items-center gap-2 cursor-pointer transition-colors duration-200"
               >
-                <UserAvatar name={displayName} />
+                <UserAvatar name={displayName} image={userImage} />
                 <span className="text-sm text-text font-light hidden sm:inline">{truncatedName}</span>
                 <ChevronDown
                   size={13}
@@ -156,6 +167,14 @@ export function Navbar() {
                   <div style={{ height: 1, background: "var(--border)", margin: "4px 0" }} />
                 </div>
                 <Link
+                  href="/profile"
+                  onClick={() => setDropdownOpen(false)}
+                  className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-text font-light transition-colors duration-150 hover:bg-[var(--border)]"
+                >
+                  <UserCircle size={14} className="text-text-muted" />
+                  Profile
+                </Link>
+                <Link
                   href="/settings"
                   onClick={() => setDropdownOpen(false)}
                   className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-text font-light transition-colors duration-150 hover:bg-[var(--border)]"
@@ -163,6 +182,16 @@ export function Navbar() {
                   <Settings size={14} className="text-text-muted" />
                   Settings
                 </Link>
+                <div style={{ height: 1, background: "var(--border)", margin: "4px 0" }} />
+                <button
+                  onClick={(e) => { e.preventDefault(); toggle(); }}
+                  className="flex items-center justify-between px-4 py-2.5 text-sm text-text font-light transition-colors duration-150 hover:bg-[var(--border)] w-full cursor-pointer"
+                >
+                  <span className="flex items-center gap-2.5">
+                    {isDark ? <Sun size={14} className="text-text-muted" /> : <Moon size={14} className="text-text-muted" />}
+                    {isDark ? "Light Mode" : "Dark Mode"}
+                  </span>
+                </button>
                 <div style={{ height: 1, background: "var(--border)", margin: "4px 0" }} />
                 <button
                   onClick={() => { signOut({ callbackUrl: "/" }); setDropdownOpen(false); }}
@@ -191,17 +220,19 @@ export function Navbar() {
             </a>
           </>
         )}
-        <button
-          onClick={toggle}
-          className="flex items-center justify-center transition-colors cursor-pointer"
-          aria-label="Toggle theme"
-        >
-          {isDark ? (
-            <Sun size={16} strokeWidth={1.5} className="text-text-muted" />
-          ) : (
-            <Moon size={16} strokeWidth={1.5} fill="var(--text-muted)" className="text-text-muted" />
-          )}
-        </button>
+        {!session?.user && (
+          <button
+            onClick={toggle}
+            className="flex items-center justify-center transition-colors cursor-pointer"
+            aria-label="Toggle theme"
+          >
+            {isDark ? (
+              <Sun size={16} strokeWidth={1.5} className="text-text-muted" />
+            ) : (
+              <Moon size={16} strokeWidth={1.5} fill="var(--text-muted)" className="text-text-muted" />
+            )}
+          </button>
+        )}
       </div>
     </nav>
   );
