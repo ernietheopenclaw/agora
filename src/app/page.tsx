@@ -546,13 +546,13 @@ export default function Home() {
               </p>
               <div className="mt-6 flex flex-col sm:flex-row gap-3">
                 <a
-                  href="/signup"
+                  href="/signup/creator"
                   className="cta-party inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-sm transition-all"
                   style={{ color: "#fff" }}
                 >
                   Claim Your First Bounty <ArrowRight size={14} />
                 </a>
-                <DrawBorderButton href="/signup">
+                <DrawBorderButton href="/signup/company">
                   I&apos;m a Brand
                 </DrawBorderButton>
               </div>

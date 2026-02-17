@@ -153,14 +153,21 @@ export default function CompanySignupPage() {
                 </button>
               )}
               {step < 2 ? (
-                <button
-                  type="button"
-                  onClick={nextStep}
-                  className="flex-1 flex items-center justify-center gap-2 px-6 py-3 text-sm font-medium rounded-sm transition-all"
-                  style={{ background: "var(--accent)", color: "#fff" }}
-                >
-                  Continue <ArrowRight size={14} />
-                </button>
+                <div className="flex-1 flex flex-col">
+                  <button
+                    type="button"
+                    onClick={nextStep}
+                    className="w-full flex items-center justify-center gap-2 px-6 py-3 text-sm font-medium rounded-sm transition-all"
+                    style={{ background: "var(--accent)", color: "#fff" }}
+                  >
+                    Continue <ArrowRight size={14} />
+                  </button>
+                  {step === 1 && (
+                    <Link href="/signup/creator" className="mt-3 text-center text-xs text-text-muted hover:text-accent-mid transition-colors">
+                      Actually, I&apos;m a creator →
+                    </Link>
+                  )}
+                </div>
               ) : (
                 <button
                   type="button"
