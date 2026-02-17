@@ -81,13 +81,11 @@ function MetricCard({
   value,
   accent,
   isDark,
-  large,
 }: {
   label: string;
   value: string;
   accent?: string;
   isDark: boolean;
-  large?: boolean;
 }) {
   return (
     <div
@@ -103,9 +101,8 @@ function MetricCard({
         {label}
       </span>
       <p
-        className="text-text font-extralight leading-none"
+        className="text-3xl font-bold leading-none"
         style={{
-          fontSize: large ? "clamp(2rem, 4vw, 3rem)" : "clamp(1.5rem, 2.5vw, 2rem)",
           color: accent || "var(--text)",
         }}
       >
@@ -559,7 +556,7 @@ function CompanySpendingChart({ isDark }: { isDark: boolean }) {
 function Section({ title, children, isDark }: { title: string; children: React.ReactNode; isDark: boolean }) {
   return (
     <div
-      className="p-5 md:p-7 mb-5"
+      className="p-5 md:p-7"
       style={{
         background: "var(--surface)",
         border: "1px solid var(--border)",
@@ -576,43 +573,58 @@ function Section({ title, children, isDark }: { title: string; children: React.R
 /* ─── Creator Dashboard ────────────────────────────────────────────── */
 function CreatorDashboard({ isDark }: { isDark: boolean }) {
   const s = CREATOR_SUMMARY;
+  const [applications, setApplications] = useState<CreatorApplication[]>(
+    () => CREATOR_APPLICATIONS.slice().reverse()
+  );
+
+  const handleRescind = useCallback((id: string) => {
+    if (!confirm("Are you sure you want to rescind this application?")) return;
+    // For real data: fetch(`/api/applications/${id}`, { method: "DELETE" })
+    setApplications((prev) => prev.filter((a) => a.id !== id));
+  }, []);
 
   return (
     <>
       {/* Earnings Overview */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-5">
-        <MetricCard label="Total Earnings" value={fmt(s.totalEarnings)} accent="var(--accent-mid)" isDark={isDark} large />
+        <MetricCard label="Total Earnings" value={fmt(s.totalEarnings)} accent="var(--accent-mid)" isDark={isDark} />
         <MetricCard label="This Month" value={fmt(s.thisMonthEarnings)} isDark={isDark} />
-        <MetricCard label="Pending Payouts" value={fmt(s.pendingPayouts)} accent="#d4a843" isDark={isDark} />
+        <MetricCard label="Pending Payouts" value={fmt(s.pendingPayouts)} isDark={isDark} />
         <MetricCard label="Avg per Bounty" value={fmt(s.averagePerBounty)} isDark={isDark} />
       </div>
 
-      {/* Charts */}
-      <Section title="Cumulative Earnings" isDark={isDark}>
-        <CumulativeLineChart data={DAILY_EARNINGS} isDark={isDark} />
-      </Section>
+      {/* Charts — side by side on desktop */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-5">
+        <Section title="Cumulative Earnings" isDark={isDark}>
+          <CumulativeLineChart data={DAILY_EARNINGS} isDark={isDark} />
+        </Section>
 
-      <Section title="Earnings Breakdown" isDark={isDark}>
-        <EarningsBarChart data={DAILY_EARNINGS} isDark={isDark} />
-      </Section>
+        <Section title="Earnings Breakdown" isDark={isDark}>
+          <EarningsBarChart data={DAILY_EARNINGS} isDark={isDark} />
+        </Section>
+      </div>
 
       {/* Active Bounties */}
-      <Section title="Active Bounties" isDark={isDark}>
-        <div className="space-y-3">
-          {ACTIVE_BOUNTIES.map((b) => (
-            <ActiveBountyRow key={b.id} bounty={b} isDark={isDark} />
-          ))}
-        </div>
-      </Section>
+      <div className="mb-5">
+        <Section title="Active Bounties" isDark={isDark}>
+          <div className="space-y-3">
+            {ACTIVE_BOUNTIES.map((b) => (
+              <ActiveBountyRow key={b.id} bounty={b} isDark={isDark} />
+            ))}
+          </div>
+        </Section>
+      </div>
 
       {/* Applications */}
-      <Section title="Recent Applications" isDark={isDark}>
-        <div className="space-y-2">
-          {CREATOR_APPLICATIONS.slice().reverse().map((a) => (
-            <ApplicationRow key={a.id} app={a} isDark={isDark} />
-          ))}
-        </div>
-      </Section>
+      <div className="mb-5">
+        <Section title="Recent Applications" isDark={isDark}>
+          <div className="space-y-2">
+            {CREATOR_APPLICATIONS.slice().reverse().map((a) => (
+              <ApplicationRow key={a.id} app={a} isDark={isDark} />
+            ))}
+          </div>
+        </Section>
+      </div>
 
       {/* Payment History */}
       <Section title="Payment History" isDark={isDark}>
@@ -761,14 +773,16 @@ function CompanyDashboard({ isDark }: { isDark: boolean }) {
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 mb-5">
         <MetricCard label="Bounties Posted" value={String(s.bountiesPosted)} isDark={isDark} />
         <MetricCard label="Active Bounties" value={String(s.activeBounties)} accent="#d4a843" isDark={isDark} />
-        <MetricCard label="Total Spent" value={fmt(s.totalSpent)} accent="var(--accent-mid)" isDark={isDark} large />
+        <MetricCard label="Total Spent" value={fmt(s.totalSpent)} accent="var(--accent-mid)" isDark={isDark} />
         <MetricCard label="Applications Received" value={String(s.applicationsReceived)} isDark={isDark} />
         <MetricCard label="Creators Hired" value={String(s.creatorsHired)} accent="#5a8a60" isDark={isDark} />
       </div>
 
-      <Section title="Spending Over Time" isDark={isDark}>
-        <CompanySpendingChart isDark={isDark} />
-      </Section>
+      <div className="mb-5">
+        <Section title="Spending Over Time" isDark={isDark}>
+          <CompanySpendingChart isDark={isDark} />
+        </Section>
+      </div>
     </>
   );
 }
@@ -816,21 +830,92 @@ export default function DashboardPage() {
           </div>
 
           {loading ? (
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="p-5 md:p-6"
-                  style={{
-                    background: "var(--surface)",
-                    border: "1px solid var(--border)",
-                    borderRadius: isDark ? "2px" : "10px",
-                  }}
-                >
-                  <div className="skeleton-shimmer w-24 h-3 mb-3" />
-                  <div className="skeleton-shimmer w-20 h-7" />
+            <div className="space-y-5">
+              {/* Metric cards skeleton */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="p-5 md:p-6"
+                    style={{
+                      background: "var(--surface)",
+                      border: "1px solid var(--border)",
+                      borderRadius: isDark ? "2px" : "10px",
+                    }}
+                  >
+                    <div className="skeleton-shimmer w-24 h-3 mb-3" />
+                    <div className="skeleton-shimmer w-20 h-7" />
+                  </div>
+                ))}
+              </div>
+
+              {/* Charts skeleton */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {Array.from({ length: 2 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="p-5 md:p-7"
+                    style={{
+                      background: "var(--surface)",
+                      border: "1px solid var(--border)",
+                      borderRadius: isDark ? "2px" : "10px",
+                    }}
+                  >
+                    <div className="skeleton-shimmer w-32 h-3 mb-5" />
+                    <div className="skeleton-shimmer w-full h-[200px]" />
+                  </div>
+                ))}
+              </div>
+
+              {/* Active bounties skeleton */}
+              <div
+                className="p-5 md:p-7"
+                style={{
+                  background: "var(--surface)",
+                  border: "1px solid var(--border)",
+                  borderRadius: isDark ? "2px" : "10px",
+                }}
+              >
+                <div className="skeleton-shimmer w-28 h-3 mb-5" />
+                <div className="space-y-3">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} className="skeleton-shimmer w-full h-16" style={{ borderRadius: isDark ? "2px" : "8px" }} />
+                  ))}
                 </div>
-              ))}
+              </div>
+
+              {/* Applications skeleton */}
+              <div
+                className="p-5 md:p-7"
+                style={{
+                  background: "var(--surface)",
+                  border: "1px solid var(--border)",
+                  borderRadius: isDark ? "2px" : "10px",
+                }}
+              >
+                <div className="skeleton-shimmer w-36 h-3 mb-5" />
+                <div className="space-y-2">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className="skeleton-shimmer w-full h-12" />
+                  ))}
+                </div>
+              </div>
+
+              {/* Payment history skeleton */}
+              <div
+                className="p-5 md:p-7"
+                style={{
+                  background: "var(--surface)",
+                  border: "1px solid var(--border)",
+                  borderRadius: isDark ? "2px" : "10px",
+                }}
+              >
+                <div className="skeleton-shimmer w-32 h-3 mb-5" />
+                <div className="skeleton-shimmer w-full h-8 mb-2" />
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="skeleton-shimmer w-full h-10 mb-1" />
+                ))}
+              </div>
             </div>
           ) : isCreator ? (
             <CreatorDashboard isDark={isDark} />
