@@ -3,12 +3,12 @@
 import { useTheme } from "../../theme-provider";
 import { CanvasBackdrop } from "../../canvas-backdrop";
 import Link from "next/link";
+import { AgoraLogo } from "../../../components/AgoraLogo";
 import { useParams } from "next/navigation";
 import { useState, useEffect } from "react";
 import {
   Sun,
   Moon,
-  Hexagon,
   ArrowLeft,
   ArrowRight,
   Clock,
@@ -123,12 +123,7 @@ export default function BountyDetail() {
         >
           <div className="flex items-center gap-2">
             <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-              <Hexagon
-                size={20}
-                className="text-accent-mid"
-                strokeWidth={1.5}
-                fill={isDark ? "none" : "var(--accent-light)"}
-              />
+              <AgoraLogo size={20} />
               <span className="text-base font-light tracking-tight text-text">agora</span>
             </Link>
           </div>
@@ -385,12 +380,7 @@ export default function BountyDetail() {
             >
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div className="flex items-center gap-2">
-                  <Hexagon
-                    size={14}
-                    className="text-accent-mid"
-                    strokeWidth={1.5}
-                    fill={isDark ? "none" : "var(--accent-light)"}
-                  />
+                  <AgoraLogo size={14} />
                   <span className="text-sm text-text-muted font-light">agora</span>
                 </div>
                 <span className="font-mono text-[11px] text-text-muted uppercase tracking-wide">

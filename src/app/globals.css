@@ -67,3 +67,45 @@ body {
 .font-mono {
   font-family: 'JetBrains Mono', monospace;
 }
+
+/* Global button hover effects per DESIGN.md */
+button,
+a[style*="background: var(--accent)"],
+a[class*="rounded-sm"][style*="background"],
+[role="button"] {
+  transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* Primary accent buttons — shadow lift + slight translate */
+button[style*="background: var(--accent)"]:hover:not(:disabled),
+a[style*="background: var(--accent)"]:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(33, 131, 128, 0.3);
+}
+
+button[style*="background: var(--accent)"]:active:not(:disabled),
+a[style*="background: var(--accent)"]:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 4px rgba(33, 131, 128, 0.2);
+}
+
+/* Surface/secondary buttons — dark mode: bg-white/5, light mode: shadow lift */
+:root button[style*="background: var(--surface)"]:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-theme="light"] button[style*="background: var(--surface)"]:hover:not(:disabled) {
+  box-shadow: 0 2px 8px rgba(45, 41, 38, 0.08);
+  background: var(--surface-raised, #e8e4df) !important;
+}
+
+/* Border-only buttons — subtle lift */
+a[style*="borderColor"]:hover,
+button[style*="borderColor"]:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+a[style*="borderColor"]:active,
+button[style*="borderColor"]:active:not(:disabled) {
+  transform: translateY(0);
+}

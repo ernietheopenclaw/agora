@@ -3,8 +3,9 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useTheme } from "../../theme-provider";
-import { Sun, Moon, Hexagon, ArrowRight, Loader2, User, Mail, Lock, FileText, AtSign } from "lucide-react";
+import { Sun, Moon, ArrowRight, Loader2, User, Mail, Lock, FileText, AtSign } from "lucide-react";
 import Link from "next/link";
+import { AgoraLogo } from "../../../components/AgoraLogo";
 
 export default function CreatorSignupPage() {
   const { theme, toggle } = useTheme();
@@ -75,7 +76,7 @@ export default function CreatorSignupPage() {
     <div className="min-h-screen flex flex-col" style={{ background: "var(--bg)" }}>
       <nav className="flex items-center justify-between px-6 py-4 md:px-12" style={{ borderBottom: "1px solid var(--border)" }}>
         <Link href="/" className="flex items-center gap-2 no-underline">
-          <Hexagon size={20} className="text-accent-mid" strokeWidth={1.5} fill={isDark ? "none" : "var(--accent-light)"} />
+          <AgoraLogo size={20} />
           <span className="text-base font-light tracking-tight text-text">agora</span>
         </Link>
         <button
