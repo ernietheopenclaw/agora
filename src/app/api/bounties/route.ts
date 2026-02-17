@@ -1,43 +1,28 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { DUMMY_BOUNTIES } from "@/data/bounties";
 
 export const dynamic = "force-dynamic";
-
-function mapDummyBounties(platform?: string | null, niche?: string | null) {
-  let filtered = DUMMY_BOUNTIES;
-  if (platform) filtered = filtered.filter((b) => b.platform === platform);
-  if (niche) filtered = filtered.filter((b) => b.niche === niche);
-  return filtered.map((b) => ({
-    id: b.id,
-    title: b.title,
-    description: b.fullDescription,
-    platform: b.platform,
-    contentType: b.contentType,
-    niche: b.niche,
-    requirements: b.requirements.join("\n"),
-    budget: b.budget,
-    deadline: b.deadline,
-    status: "open",
-    allowResubmission: false,
-    createdAt: new Date().toISOString(),
-    company: { companyName: b.brand, description: b.brandDescription },
-    _count: { applications: 0 },
-  }));
-}
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const platform = searchParams.get("platform");
   const niche = searchParams.get("niche");
   const mine = searchParams.get("mine");
+  const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
+  const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "50")));
+  const sort = searchParams.get("sort") || "newest";
+  const search = searchParams.get("search")?.trim() || "";
+  const payMin = searchParams.get("payMin");
+  const payMax = searchParams.get("payMax");
+  const followerMin = searchParams.get("followerMin");
+  const followerMax = searchParams.get("followerMax");
 
   try {
     const { prisma } = await import("@/lib/prisma");
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const where: Record<string, unknown> = {};
+    const where: any = {};
 
     if (mine === "true") {
       const session = await getServerSession(authOptions);
@@ -48,7 +33,7 @@ export async function GET(req: Request) {
         where: { userId: session.user.id },
       });
       if (!profile) {
-        return NextResponse.json([]);
+        return NextResponse.json({ bounties: [], total: 0, page, hasMore: false });
       }
       where.companyId = profile.id;
     } else {
@@ -57,29 +42,71 @@ export async function GET(req: Request) {
 
     if (platform) where.platform = platform;
     if (niche) where.niche = niche;
+    if (payMin) where.budget = { ...where.budget, gte: parseFloat(payMin) };
+    if (payMax) where.budget = { ...where.budget, lte: parseFloat(payMax) };
+    if (followerMin) where.minFollowers = { ...where.minFollowers, gte: parseInt(followerMin) };
+    if (followerMax) where.minFollowers = { ...where.minFollowers, lte: parseInt(followerMax) };
 
-    const bounties = await prisma.bounty.findMany({
-      where,
-      include: {
-        company: { select: { companyName: true, description: true } },
-        _count: { select: { applications: true } },
-      },
-      orderBy: { createdAt: "desc" },
+    if (search) {
+      where.OR = [
+        { title: { contains: search, mode: "insensitive" } },
+        { company: { companyName: { contains: search, mode: "insensitive" } } },
+      ];
+    }
+
+    // Sort mapping
+    let orderBy: any;
+    switch (sort) {
+      case "oldest":
+        orderBy = { createdAt: "asc" };
+        break;
+      case "deadline-asc":
+        orderBy = { deadline: "asc" };
+        break;
+      case "deadline-desc":
+        orderBy = { deadline: "desc" };
+        break;
+      case "followers-asc":
+        orderBy = { minFollowers: "asc" };
+        break;
+      case "followers-desc":
+        orderBy = { minFollowers: "desc" };
+        break;
+      case "pay-asc":
+        orderBy = { budget: "asc" };
+        break;
+      case "pay-desc":
+        orderBy = { budget: "desc" };
+        break;
+      case "newest":
+      default:
+        orderBy = { createdAt: "desc" };
+        break;
+    }
+
+    const [bounties, total] = await Promise.all([
+      prisma.bounty.findMany({
+        where,
+        include: {
+          company: { select: { companyName: true, description: true } },
+          _count: { select: { applications: true } },
+        },
+        orderBy,
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.bounty.count({ where }),
+    ]);
+
+    return NextResponse.json({
+      bounties,
+      total,
+      page,
+      hasMore: page * limit < total,
     });
-
-    if (bounties.length > 0) {
-      return NextResponse.json(bounties);
-    }
-
-    if (!mine) {
-      console.log("No bounties in DB, returning fallback data");
-      return NextResponse.json(mapDummyBounties(platform, niche));
-    }
-    return NextResponse.json([]);
   } catch (error) {
-    console.error("Failed to fetch bounties from DB, using fallback:", error);
-    if (mine) return NextResponse.json([]);
-    return NextResponse.json(mapDummyBounties(platform, niche));
+    console.error("Failed to fetch bounties:", error);
+    return NextResponse.json({ bounties: [], total: 0, page, hasMore: false });
   }
 }
 

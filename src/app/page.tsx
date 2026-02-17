@@ -22,23 +22,6 @@ import Link from "next/link";
 import { SpinningLogo } from "../components/SpinningLogo";
 import { BountyGridSkeleton } from "../components/Skeletons";
 import { Navbar } from "../components/Navbar";
-import { DUMMY_BOUNTIES } from "../data/bounties";
-
-function mapDummyToApiBounty(b: (typeof DUMMY_BOUNTIES)[number]) {
-  return {
-    id: b.id,
-    title: b.title,
-    description: b.fullDescription,
-    platform: b.platform,
-    contentType: b.contentType,
-    niche: b.niche,
-    requirements: b.requirements.join("\n"),
-    budget: b.budget,
-    payPerImpression: b.payPerImpression,
-    deadline: b.deadline,
-    company: { companyName: b.brand, description: b.brandDescription },
-  };
-}
 
 interface Bounty {
   id: string;
@@ -51,6 +34,7 @@ interface Bounty {
   deadline: string;
   niche: string | null;
   requirements: string | null;
+  minFollowers?: number;
   company: { companyName: string; description: string | null };
 }
 
@@ -149,7 +133,7 @@ function BountyCardContent({ bounty, isDark, index = 0, loaded }: { bounty?: Bou
 
   useEffect(() => {
     if (!loaded || !bounty) return;
-    const timer = setTimeout(() => setRevealed(true), 80 * index + 50);
+    const timer = setTimeout(() => setRevealed(true), 80 * Math.min(index, 12) + 50);
     return () => clearTimeout(timer);
   }, [loaded, bounty, index]);
 
@@ -644,6 +628,34 @@ function PayStepper({
   );
 }
 
+function SkeletonCard({ isDark }: { isDark: boolean }) {
+  return (
+    <BountyCardShell isDark={isDark}>
+      <div style={{ minHeight: "100px" }}>
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="skeleton-shimmer w-[14px] h-[14px] rounded-full" />
+              <div className="skeleton-shimmer w-16 h-3" />
+              <div className="skeleton-shimmer w-12 h-3" />
+            </div>
+            <div className="skeleton-shimmer w-3/4 h-5 mb-2" />
+            <div className="skeleton-shimmer w-1/3 h-3 mt-1.5" />
+          </div>
+          <div className="text-right flex-shrink-0">
+            <div className="skeleton-shimmer w-20 h-7 ml-auto" />
+            <div className="skeleton-shimmer w-14 h-3 mt-2 ml-auto" />
+          </div>
+        </div>
+        <div className="mt-3 flex items-center gap-2">
+          <div className="skeleton-shimmer w-14 h-4" />
+          <div className="skeleton-shimmer w-20 h-4" />
+        </div>
+      </div>
+    </BountyCardShell>
+  );
+}
+
 export default function Home() {
   const { theme, toggle } = useTheme();
   const isDark = theme === "dark";
@@ -651,7 +663,11 @@ export default function Home() {
   const isLoggedIn = !!session?.user;
 
   const [bounties, setBounties] = useState<Bounty[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [platformFilters, setPlatformFilters] = useState<string[]>([]);
   const [nicheFilters, setNicheFilters] = useState<string[]>([]);
   const [payMin, setPayMin] = useState("");
@@ -662,68 +678,114 @@ export default function Home() {
   const [sortBy, setSortBy] = useState("newest");
   const [showMobileFilters, setShowMobileFilters] = useState(false);
 
+  // Debounced search
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   useEffect(() => {
-    fetch("/api/bounties")
+    const t = setTimeout(() => setDebouncedSearch(searchQuery), 300);
+    return () => clearTimeout(t);
+  }, [searchQuery]);
+
+  const buildQueryString = useCallback((p: number) => {
+    const params = new URLSearchParams();
+    params.set("page", String(p));
+    params.set("limit", "50");
+    if (platformFilters.length === 1) params.set("platform", platformFilters[0]);
+    if (nicheFilters.length === 1) params.set("niche", nicheFilters[0]);
+    if (sortBy !== "newest") params.set("sort", sortBy);
+    if (debouncedSearch) params.set("search", debouncedSearch);
+    if (payMin) params.set("payMin", payMin);
+    if (payMax) params.set("payMax", payMax);
+    if (followerMin) params.set("followerMin", followerMin);
+    if (followerMax) params.set("followerMax", followerMax);
+    return params.toString();
+  }, [platformFilters, nicheFilters, sortBy, debouncedSearch, payMin, payMax, followerMin, followerMax]);
+
+  // Fetch bounties (reset on filter change)
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setPage(1);
+
+    fetch(`/api/bounties?${buildQueryString(1)}`)
       .then((r) => r.json())
       .then((data) => {
-        if (Array.isArray(data) && data.length > 0) setBounties(data);
-        else setBounties(DUMMY_BOUNTIES.map(mapDummyToApiBounty));
+        if (cancelled) return;
+        // Handle both old array format and new paginated format
+        if (Array.isArray(data)) {
+          setBounties(data);
+          setTotal(data.length);
+          setHasMore(false);
+        } else {
+          setBounties(data.bounties || []);
+          setTotal(data.total || 0);
+          setHasMore(data.hasMore || false);
+        }
       })
       .catch(() => {
-        setBounties(DUMMY_BOUNTIES.map(mapDummyToApiBounty));
+        if (!cancelled) {
+          setBounties([]);
+          setTotal(0);
+          setHasMore(false);
+        }
       })
-      .finally(() => setLoading(false));
-  }, []);
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => { cancelled = true; };
+  }, [buildQueryString]);
+
+  // Load more
+  const loadMore = useCallback(() => {
+    if (loadingMore || !hasMore) return;
+    const nextPage = page + 1;
+    setLoadingMore(true);
+
+    fetch(`/api/bounties?${buildQueryString(nextPage)}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setBounties((prev) => [...prev, ...data]);
+          setHasMore(false);
+        } else {
+          setBounties((prev) => [...prev, ...(data.bounties || [])]);
+          setHasMore(data.hasMore || false);
+        }
+        setPage(nextPage);
+      })
+      .catch(() => {})
+      .finally(() => setLoadingMore(false));
+  }, [loadingMore, hasMore, page, buildQueryString]);
+
+  // IntersectionObserver for infinite scroll
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) loadMore();
+      },
+      { rootMargin: "400px" }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [loadMore]);
+
+  // Client-side filtering for multi-select (API only supports single platform/niche)
+  const filtered = useMemo(() => {
+    if (platformFilters.length <= 1 && nicheFilters.length <= 1) return bounties;
+    return bounties.filter((b) => {
+      if (platformFilters.length > 1 && !platformFilters.includes(b.platform)) return false;
+      if (nicheFilters.length > 1 && b.niche && !nicheFilters.includes(b.niche)) return false;
+      if (nicheFilters.length > 1 && !b.niche) return false;
+      return true;
+    });
+  }, [bounties, platformFilters, nicheFilters]);
 
   const PLATFORMS = ALL_PLATFORMS;
   const NICHES = ALL_NICHES;
-
-  const filtered = useMemo(() => {
-    const q = searchQuery.toLowerCase().trim();
-    const results = bounties.filter((b) => {
-      if (platformFilters.length > 0 && !platformFilters.includes(b.platform)) return false;
-      if (nicheFilters.length > 0 && b.niche && !nicheFilters.includes(b.niche)) return false;
-      if (nicheFilters.length > 0 && !b.niche) return false;
-      if (payMin && b.budget < parseInt(payMin)) return false;
-      if (payMax && b.budget > parseInt(payMax)) return false;
-      {
-        const required = extractFollowerCount(b.requirements);
-        if (followerMin && required < parseInt(followerMin)) return false;
-        if (followerMax && required > parseInt(followerMax)) return false;
-      }
-      if (q) {
-        const matchTitle = b.title.toLowerCase().includes(q);
-        const matchBrand = b.company.companyName.toLowerCase().includes(q);
-        if (!matchTitle && !matchBrand) return false;
-      }
-      return true;
-    });
-
-    // Sort
-    results.sort((a, b) => {
-      switch (sortBy) {
-        case "oldest":
-          return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
-        case "deadline-asc":
-          return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
-        case "deadline-desc":
-          return new Date(b.deadline).getTime() - new Date(a.deadline).getTime();
-        case "followers-asc":
-          return extractFollowerCount(a.requirements) - extractFollowerCount(b.requirements);
-        case "followers-desc":
-          return extractFollowerCount(b.requirements) - extractFollowerCount(a.requirements);
-        case "pay-asc":
-          return a.budget - b.budget;
-        case "pay-desc":
-          return b.budget - a.budget;
-        case "newest":
-        default:
-          return new Date(b.deadline).getTime() - new Date(a.deadline).getTime();
-      }
-    });
-
-    return results;
-  }, [bounties, platformFilters, nicheFilters, payMin, payMax, followerMin, followerMax, searchQuery, sortBy]);
 
   const activeFilterCount = [platformFilters.length > 0, nicheFilters.length > 0, !!payMin || !!payMax, !!followerMin, !!followerMax].filter(Boolean).length;
 
@@ -759,9 +821,6 @@ export default function Home() {
                 >
                   Claim Your First Bounty <ArrowRight size={14} />
                 </a>
-                <DrawBorderButton href="/signup/company">
-                  I&apos;m a Brand
-                </DrawBorderButton>
               </div>
             </div>
           </section>
@@ -811,7 +870,7 @@ export default function Home() {
               <div className="flex-1 min-w-0" style={{ maxWidth: "160px" }}>
                 <Dropdown label="Sort" options={SORT_OPTIONS} value={sortBy} onChange={setSortBy} isDark={isDark} />
               </div>
-              <span className="font-mono text-[11px] text-text-muted ml-auto whitespace-nowrap">{filtered.length} bounties</span>
+              <span className="font-mono text-[11px] text-text-muted ml-auto whitespace-nowrap">{total} bounties</span>
             </div>
           </div>
 
@@ -897,7 +956,7 @@ export default function Home() {
                       border: "none",
                     }}
                   >
-                    Done · {filtered.length} bounties
+                    Done · {total} bounties
                   </button>
                 </div>
               </div>
@@ -905,7 +964,7 @@ export default function Home() {
             </div>
           )}
 
-          {/* Desktop: fixed CSS grid layout — NO flex-wrap, columns are fixed width */}
+          {/* Desktop: fixed CSS grid layout */}
           <div className="hidden md:block">
             <div className="grid gap-3 items-center" style={{ gridTemplateColumns: "auto 160px 160px auto auto 200px 1fr auto" }}>
               <div className="flex items-center gap-2 text-text-muted">
@@ -946,7 +1005,7 @@ export default function Home() {
                     Clear all
                   </button>
                 )}
-                <span className="font-mono text-[11px] text-text-muted whitespace-nowrap">{filtered.length} bounties</span>
+                <span className="font-mono text-[11px] text-text-muted whitespace-nowrap">{total} bounties</span>
               </div>
             </div>
           </div>
@@ -974,18 +1033,34 @@ export default function Home() {
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-5">
-              {(loading ? Array.from({ length: 6 }) : filtered).map((bounty, i) => (
-                <BountyCardShell key={loading ? `skeleton-${i}` : (bounty as Bounty).id} isDark={isDark}>
-                  <BountyCardContent
-                    bounty={loading ? undefined : (bounty as Bounty)}
-                    isDark={isDark}
-                    index={i}
-                    loaded={!loading}
-                  />
-                </BountyCardShell>
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-5">
+                {loading
+                  ? Array.from({ length: 6 }).map((_, i) => (
+                      <SkeletonCard key={`skeleton-${i}`} isDark={isDark} />
+                    ))
+                  : filtered.map((bounty, i) => (
+                      <BountyCardShell key={bounty.id} isDark={isDark}>
+                        <BountyCardContent
+                          bounty={bounty}
+                          isDark={isDark}
+                          index={i}
+                          loaded={true}
+                        />
+                      </BountyCardShell>
+                    ))
+                }
+                {loadingMore &&
+                  Array.from({ length: 3 }).map((_, i) => (
+                    <SkeletonCard key={`loading-more-${i}`} isDark={isDark} />
+                  ))
+                }
+              </div>
+              {/* Sentinel for infinite scroll */}
+              {hasMore && !loading && (
+                <div ref={sentinelRef} style={{ height: "1px" }} />
+              )}
+            </>
           )}
         </section>
 
