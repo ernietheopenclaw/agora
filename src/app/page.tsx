@@ -560,11 +560,73 @@ export default function Home() {
 
         {/* Search & Filters */}
         <section className="px-6 md:px-12 lg:px-24 pb-6">
-          {/* Search bar */}
-          <div className="mb-4">
-            <div
-              className="relative max-w-md"
-            >
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            {/* Filters (left) */}
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex items-center gap-2 text-text-muted">
+                <Filter size={14} />
+                <span className="font-mono text-[11px] uppercase tracking-wider">
+                  Filter{activeFilterCount > 0 && ` (${activeFilterCount})`}
+                </span>
+              </div>
+              <Dropdown
+                label="Platform"
+                options={PLATFORMS.map((p) => ({ label: p, value: p }))}
+                value={platformFilter}
+                onChange={setPlatformFilter}
+                isDark={isDark}
+              />
+              <Dropdown
+                label="Niche"
+                options={NICHES.map((n) => ({ label: n, value: n }))}
+                value={nicheFilter}
+                onChange={setNicheFilter}
+                isDark={isDark}
+              />
+              <Dropdown
+                label="Pay Range"
+                options={PAY_RANGES.slice(1).map((r, i) => ({ label: r.label, value: String(i + 1) }))}
+                value={payRange > 0 ? String(payRange) : ""}
+                onChange={(v) => setPayRange(v ? parseInt(v) : 0)}
+                isDark={isDark}
+              />
+              <div className="flex items-center gap-1.5">
+                <Label>Followers</Label>
+                <NumberStepper
+                  value={followerMin}
+                  onChange={setFollowerMin}
+                  placeholder="Min"
+                  isDark={isDark}
+                />
+                <span className="text-text-muted text-[11px] font-mono">–</span>
+                <NumberStepper
+                  value={followerMax}
+                  onChange={setFollowerMax}
+                  placeholder="Max"
+                  isDark={isDark}
+                />
+              </div>
+              {activeFilterCount > 0 && (
+                <button
+                  onClick={() => {
+                    setPlatformFilter("");
+                    setNicheFilter("");
+                    setPayRange(0);
+                    setFollowerMin("");
+                    setFollowerMax("");
+                  }}
+                  className="font-mono text-[11px] uppercase tracking-wider text-accent-mid hover:text-accent transition-colors"
+                >
+                  Clear all
+                </button>
+              )}
+              <span className="font-mono text-[11px] text-text-muted">
+                {filtered.length} bounties
+              </span>
+            </div>
+
+            {/* Search bar (right) */}
+            <div className="relative w-full md:w-64 lg:w-72 flex-shrink-0">
               <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" />
               <input
                 type="text"
@@ -576,7 +638,7 @@ export default function Home() {
                   background: "var(--surface)",
                   border: "1px solid var(--border)",
                   borderRadius: isDark ? "2px" : "8px",
-                  height: "40px",
+                  height: "36px",
                   boxShadow: isDark ? "none" : "0 1px 3px rgba(45,41,38,0.04)",
                 }}
                 onFocus={(e) => (e.currentTarget.style.borderColor = "var(--border-strong)")}
@@ -591,69 +653,6 @@ export default function Home() {
                 </button>
               )}
             </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="flex items-center gap-2 text-text-muted">
-              <Filter size={14} />
-              <span className="font-mono text-[11px] uppercase tracking-wider">
-                Filter{activeFilterCount > 0 && ` (${activeFilterCount})`}
-              </span>
-            </div>
-            <Dropdown
-              label="Platform"
-              options={PLATFORMS.map((p) => ({ label: p, value: p }))}
-              value={platformFilter}
-              onChange={setPlatformFilter}
-              isDark={isDark}
-            />
-            <Dropdown
-              label="Niche"
-              options={NICHES.map((n) => ({ label: n, value: n }))}
-              value={nicheFilter}
-              onChange={setNicheFilter}
-              isDark={isDark}
-            />
-            <Dropdown
-              label="Pay Range"
-              options={PAY_RANGES.slice(1).map((r, i) => ({ label: r.label, value: String(i + 1) }))}
-              value={payRange > 0 ? String(payRange) : ""}
-              onChange={(v) => setPayRange(v ? parseInt(v) : 0)}
-              isDark={isDark}
-            />
-            <div className="flex items-center gap-1.5">
-              <Label>Followers</Label>
-              <NumberStepper
-                value={followerMin}
-                onChange={setFollowerMin}
-                placeholder="Min"
-                isDark={isDark}
-              />
-              <span className="text-text-muted text-[11px] font-mono">–</span>
-              <NumberStepper
-                value={followerMax}
-                onChange={setFollowerMax}
-                placeholder="Max"
-                isDark={isDark}
-              />
-            </div>
-            {activeFilterCount > 0 && (
-              <button
-                onClick={() => {
-                  setPlatformFilter("");
-                  setNicheFilter("");
-                  setPayRange(0);
-                  setFollowerMin("");
-                  setFollowerMax("");
-                }}
-                className="font-mono text-[11px] uppercase tracking-wider text-accent-mid hover:text-accent transition-colors"
-              >
-                Clear all
-              </button>
-            )}
-            <span className="ml-auto font-mono text-[11px] text-text-muted">
-              {filtered.length} bounties
-            </span>
           </div>
         </section>
 
