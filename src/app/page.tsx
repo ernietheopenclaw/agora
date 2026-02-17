@@ -1,6 +1,7 @@
 "use client";
 
 import { useTheme } from "./theme-provider";
+import { useSession } from "next-auth/react";
 import { CanvasBackdrop } from "./canvas-backdrop";
 import {
   Sun,
@@ -318,7 +319,7 @@ function Dropdown({
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-1.5 cursor-pointer font-mono text-[11px] uppercase tracking-wider px-3 transition-all duration-200 w-[160px] justify-between overflow-hidden"
+        className="flex items-center gap-1.5 cursor-pointer font-mono text-[11px] uppercase tracking-wider px-3 transition-all duration-200 w-full justify-between overflow-hidden"
         style={{
           background: "var(--surface)",
           color: value ? "var(--text)" : "var(--text-muted)",
@@ -467,6 +468,8 @@ function NumberStepper({
 export default function Home() {
   const { theme, toggle } = useTheme();
   const isDark = theme === "dark";
+  const { data: session, status: authStatus } = useSession();
+  const isLoggedIn = !!session?.user;
 
   const [bounties, setBounties] = useState<Bounty[]>([]);
   const [loading, setLoading] = useState(true);
@@ -523,135 +526,111 @@ export default function Home() {
         {/* Nav */}
         <Navbar />
 
-        {/* Hero — compact */}
-        <section className="pt-28 pb-10 md:pt-32 md:pb-14 px-6 md:px-12 lg:px-24">
-          <div className="max-w-3xl">
-            <Label>Open bounties</Label>
-            <h1
-              className="mt-3 text-text font-extralight leading-[1.1]"
-              style={{ fontSize: "clamp(2rem, 5vw, 3.5rem)" }}
-            >
-              Your content is worth something.
-              <br />
-              <span className="text-accent-mid">Here&apos;s the proof.</span>
-            </h1>
-            <p className="mt-4 max-w-lg text-base leading-relaxed text-text-muted font-normal">
-              Real brands. Real budgets. Pick a bounty, create the content, get paid.
-              No pitching, no waiting — the work is already here.
-            </p>
-            <div className="mt-6 flex flex-col sm:flex-row gap-3">
-              <a
-                href="/signup"
-                className="cta-party inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-sm transition-all"
-                style={{ color: "#fff" }}
+        {/* Hero — only for logged-out users */}
+        {!isLoggedIn ? (
+          <section className="pt-28 pb-10 md:pt-32 md:pb-14 px-6 md:px-12 lg:px-24">
+            <div className="max-w-3xl">
+              <Label>Open bounties</Label>
+              <h1
+                className="mt-3 text-text font-extralight leading-[1.1]"
+                style={{ fontSize: "clamp(2rem, 5vw, 3.5rem)" }}
               >
-                Claim Your First Bounty <ArrowRight size={14} />
-              </a>
-              <a
-                href="/signup"
-                className="btn-outline-draw inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-sm border transition-all text-text-muted hover:text-text"
-                style={{ borderColor: "var(--border-strong)" }}
-              >
-                I&apos;m a Brand
-              </a>
+                Your content is worth something.
+                <br />
+                <span className="text-accent-mid">Here&apos;s the proof.</span>
+              </h1>
+              <p className="mt-4 max-w-lg text-base leading-relaxed text-text-muted font-normal">
+                Real brands. Real budgets. Pick a bounty, create the content, get paid.
+                No pitching, no waiting — the work is already here.
+              </p>
+              <div className="mt-6 flex flex-col sm:flex-row gap-3">
+                <a
+                  href="/signup"
+                  className="cta-party inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-sm transition-all"
+                  style={{ color: "#fff" }}
+                >
+                  Claim Your First Bounty <ArrowRight size={14} />
+                </a>
+                <a
+                  href="/signup"
+                  className="btn-outline-draw inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-sm border transition-all text-text-muted hover:text-text"
+                  style={{ borderColor: "var(--border-strong)" }}
+                >
+                  I&apos;m a Brand
+                </a>
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
+        ) : (
+          <div className="pt-24 md:pt-28" />
+        )}
 
         {/* Search & Filters */}
         <section className="px-6 md:px-12 lg:px-24 pb-6">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            {/* Filters (left) */}
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="flex items-center gap-2 text-text-muted">
-                <Filter size={14} />
-                <span className="font-mono text-[11px] uppercase tracking-wider">
-                  Filter{activeFilterCount > 0 && ` (${activeFilterCount})`}
-                </span>
-              </div>
-              <Dropdown
-                label="Platform"
-                options={PLATFORMS.map((p) => ({ label: p, value: p }))}
-                value={platformFilter}
-                onChange={setPlatformFilter}
-                isDark={isDark}
-              />
-              <Dropdown
-                label="Niche"
-                options={NICHES.map((n) => ({ label: n, value: n }))}
-                value={nicheFilter}
-                onChange={setNicheFilter}
-                isDark={isDark}
-              />
-              <Dropdown
-                label="Pay Range"
-                options={PAY_RANGES.slice(1).map((r, i) => ({ label: r.label, value: String(i + 1) }))}
-                value={payRange > 0 ? String(payRange) : ""}
-                onChange={(v) => setPayRange(v ? parseInt(v) : 0)}
-                isDark={isDark}
-              />
-              <div className="flex items-center gap-1.5">
-                <Label>Followers</Label>
-                <NumberStepper
-                  value={followerMin}
-                  onChange={setFollowerMin}
-                  placeholder="Min"
-                  isDark={isDark}
-                />
-                <span className="text-text-muted text-[11px] font-mono">–</span>
-                <NumberStepper
-                  value={followerMax}
-                  onChange={setFollowerMax}
-                  placeholder="Max"
-                  isDark={isDark}
-                />
-              </div>
+          {/* Mobile: stacked layout */}
+          <div className="flex flex-col gap-3 md:hidden">
+            <div className="flex items-center gap-2 text-text-muted">
+              <Filter size={14} />
+              <span className="font-mono text-[11px] uppercase tracking-wider">
+                Filter{activeFilterCount > 0 && ` (${activeFilterCount})`}
+              </span>
               {activeFilterCount > 0 && (
                 <button
-                  onClick={() => {
-                    setPlatformFilter("");
-                    setNicheFilter("");
-                    setPayRange(0);
-                    setFollowerMin("");
-                    setFollowerMax("");
-                  }}
-                  className="font-mono text-[11px] uppercase tracking-wider text-accent-mid hover:text-accent transition-colors"
+                  onClick={() => { setPlatformFilter(""); setNicheFilter(""); setPayRange(0); setFollowerMin(""); setFollowerMax(""); }}
+                  className="font-mono text-[11px] uppercase tracking-wider text-accent-mid hover:text-accent transition-colors ml-auto"
                 >
                   Clear all
                 </button>
               )}
-              <span className="font-mono text-[11px] text-text-muted">
-                {filtered.length} bounties
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <Dropdown label="Platform" options={PLATFORMS.map((p) => ({ label: p, value: p }))} value={platformFilter} onChange={setPlatformFilter} isDark={isDark} />
+              <Dropdown label="Niche" options={NICHES.map((n) => ({ label: n, value: n }))} value={nicheFilter} onChange={setNicheFilter} isDark={isDark} />
+              <Dropdown label="Pay Range" options={PAY_RANGES.slice(1).map((r, i) => ({ label: r.label, value: String(i + 1) }))} value={payRange > 0 ? String(payRange) : ""} onChange={(v) => setPayRange(v ? parseInt(v) : 0)} isDark={isDark} />
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Label>Followers</Label>
+              <NumberStepper value={followerMin} onChange={setFollowerMin} placeholder="Min" isDark={isDark} />
+              <span className="text-text-muted text-[11px] font-mono">–</span>
+              <NumberStepper value={followerMax} onChange={setFollowerMax} placeholder="Max" isDark={isDark} />
+            </div>
+            <div className="relative">
+              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" />
+              <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search bounties or brands..." className="w-full pl-9 pr-4 font-light text-sm text-text placeholder:text-text-muted outline-none transition-all duration-200" style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: isDark ? "2px" : "8px", height: "36px", boxShadow: isDark ? "none" : "0 1px 3px rgba(45,41,38,0.04)" }} onFocus={(e) => (e.currentTarget.style.borderColor = "var(--border-strong)")} onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border)")} />
+              {searchQuery && (<button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text transition-colors cursor-pointer"><X size={13} /></button>)}
+            </div>
+            <span className="font-mono text-[11px] text-text-muted">{filtered.length} bounties</span>
+          </div>
+
+          {/* Desktop: fixed CSS grid layout */}
+          <div className="hidden md:grid items-center gap-3" style={{ gridTemplateColumns: "auto 160px 160px 160px auto 1fr auto" }}>
+            <div className="flex items-center gap-2 text-text-muted">
+              <Filter size={14} />
+              <span className="font-mono text-[11px] uppercase tracking-wider whitespace-nowrap">
+                Filter{activeFilterCount > 0 && ` (${activeFilterCount})`}
               </span>
             </div>
-
-            {/* Search bar (right) */}
-            <div className="relative w-full md:w-64 lg:w-72 flex-shrink-0">
+            <Dropdown label="Platform" options={PLATFORMS.map((p) => ({ label: p, value: p }))} value={platformFilter} onChange={setPlatformFilter} isDark={isDark} />
+            <Dropdown label="Niche" options={NICHES.map((n) => ({ label: n, value: n }))} value={nicheFilter} onChange={setNicheFilter} isDark={isDark} />
+            <Dropdown label="Pay Range" options={PAY_RANGES.slice(1).map((r, i) => ({ label: r.label, value: String(i + 1) }))} value={payRange > 0 ? String(payRange) : ""} onChange={(v) => setPayRange(v ? parseInt(v) : 0)} isDark={isDark} />
+            <div className="flex items-center gap-1.5">
+              <Label>Followers</Label>
+              <NumberStepper value={followerMin} onChange={setFollowerMin} placeholder="Min" isDark={isDark} />
+              <span className="text-text-muted text-[11px] font-mono">–</span>
+              <NumberStepper value={followerMax} onChange={setFollowerMax} placeholder="Max" isDark={isDark} />
+            </div>
+            <div className="relative">
               <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search bounties or brands..."
-                className="w-full pl-9 pr-4 font-light text-sm text-text placeholder:text-text-muted outline-none transition-all duration-200"
-                style={{
-                  background: "var(--surface)",
-                  border: "1px solid var(--border)",
-                  borderRadius: isDark ? "2px" : "8px",
-                  height: "36px",
-                  boxShadow: isDark ? "none" : "0 1px 3px rgba(45,41,38,0.04)",
-                }}
-                onFocus={(e) => (e.currentTarget.style.borderColor = "var(--border-strong)")}
-                onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border)")}
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text transition-colors cursor-pointer"
-                >
-                  <X size={13} />
+              <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search bounties or brands..." className="w-full pl-9 pr-4 font-light text-sm text-text placeholder:text-text-muted outline-none transition-all duration-200" style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: isDark ? "2px" : "8px", height: "36px", boxShadow: isDark ? "none" : "0 1px 3px rgba(45,41,38,0.04)" }} onFocus={(e) => (e.currentTarget.style.borderColor = "var(--border-strong)")} onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border)")} />
+              {searchQuery && (<button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text transition-colors cursor-pointer"><X size={13} /></button>)}
+            </div>
+            <div className="flex items-center gap-3">
+              {activeFilterCount > 0 && (
+                <button onClick={() => { setPlatformFilter(""); setNicheFilter(""); setPayRange(0); setFollowerMin(""); setFollowerMax(""); }} className="font-mono text-[11px] uppercase tracking-wider text-accent-mid hover:text-accent transition-colors whitespace-nowrap">
+                  Clear all
                 </button>
               )}
+              <span className="font-mono text-[11px] text-text-muted whitespace-nowrap">{filtered.length} bounties</span>
             </div>
           </div>
         </section>
@@ -691,29 +670,31 @@ export default function Home() {
           )}
         </section>
 
-        {/* Bottom CTA */}
-        <section
-          className="px-6 md:px-12 lg:px-24 py-16"
-          style={{ borderTop: "1px solid var(--border)" }}
-        >
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-            <div>
-              <h2 className="text-text font-extralight text-2xl md:text-3xl">
-                More bounties drop daily.
-              </h2>
-              <p className="mt-2 text-text-muted text-base">
-                Sign up to get notified and apply before slots fill up.
-              </p>
+        {/* Bottom CTA — logged-out only */}
+        {!isLoggedIn && (
+          <section
+            className="px-6 md:px-12 lg:px-24 py-16"
+            style={{ borderTop: "1px solid var(--border)" }}
+          >
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+              <div>
+                <h2 className="text-text font-extralight text-2xl md:text-3xl">
+                  More bounties drop daily.
+                </h2>
+                <p className="mt-2 text-text-muted text-base">
+                  Sign up to get notified and apply before slots fill up.
+                </p>
+              </div>
+              <a
+                href="/signup"
+                className="cta-party inline-flex items-center gap-2 px-6 py-3 text-sm font-medium rounded-sm transition-all flex-shrink-0"
+                style={{ color: "#fff" }}
+              >
+                Create Your Profile <ArrowRight size={14} />
+              </a>
             </div>
-            <a
-              href="/signup"
-              className="cta-party inline-flex items-center gap-2 px-6 py-3 text-sm font-medium rounded-sm transition-all flex-shrink-0"
-              style={{ color: "#fff" }}
-            >
-              Create Your Profile <ArrowRight size={14} />
-            </a>
-          </div>
-        </section>
+          </section>
+        )}
 
         {/* Footer */}
         <footer

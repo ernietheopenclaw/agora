@@ -3,7 +3,7 @@
 import { useSession, signOut } from "next-auth/react";
 import { useTheme } from "../app/theme-provider";
 import { SpinningLogo } from "./SpinningLogo";
-import { Sun, Moon, ArrowRight, LogOut, LayoutDashboard, Settings, ChevronDown } from "lucide-react";
+import { Sun, Moon, ArrowRight, LogOut, Settings, ChevronDown, BarChart3, LayoutDashboard, Crosshair } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
@@ -70,63 +70,109 @@ export function Navbar() {
         {status === "loading" ? (
           <div className="w-20 h-4 rounded" style={{ background: "var(--border)" }} />
         ) : session?.user ? (
-          <div className="relative" ref={dropdownRef}>
-            <button
-              onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="flex items-center gap-2 cursor-pointer transition-colors duration-200"
-            >
-              <UserAvatar name={displayName} />
-              <span className="text-sm text-text font-light hidden sm:inline">{truncatedName}</span>
-              <ChevronDown
-                size={13}
-                className="text-text-muted transition-transform duration-200"
-                style={{ transform: dropdownOpen ? "rotate(180deg)" : "rotate(0)" }}
-              />
-            </button>
-            <div
-              className="absolute right-0 top-[calc(100%+8px)] min-w-[180px] py-1 overflow-hidden"
-              style={{
-                background: "var(--surface)",
-                border: dropdownOpen ? "1px solid var(--border-strong)" : "1px solid transparent",
-                borderRadius: isDark ? "2px" : "10px",
-                boxShadow: dropdownOpen
-                  ? isDark
-                    ? "0 8px 24px rgba(0,0,0,0.5)"
-                    : "0 8px 32px rgba(45,41,38,0.12)"
-                  : "none",
-                opacity: dropdownOpen ? 1 : 0,
-                transform: dropdownOpen ? "translateY(0) scaleY(1)" : "translateY(-4px) scaleY(0.96)",
-                transformOrigin: "top right",
-                transition: "opacity 0.15s ease, transform 0.15s ease",
-                pointerEvents: dropdownOpen ? "auto" : "none",
-              }}
-            >
-              <Link
-                href="/dashboard"
-                onClick={() => setDropdownOpen(false)}
-                className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-text font-light transition-colors duration-150 hover:bg-[var(--border)]"
-              >
-                <LayoutDashboard size={14} className="text-text-muted" />
-                Dashboard
-              </Link>
-              <Link
-                href="/settings"
-                onClick={() => setDropdownOpen(false)}
-                className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-text font-light transition-colors duration-150 hover:bg-[var(--border)]"
-              >
-                <Settings size={14} className="text-text-muted" />
-                Settings
-              </Link>
-              <div style={{ height: 1, background: "var(--border)", margin: "4px 0" }} />
-              <button
-                onClick={() => { signOut({ callbackUrl: "/" }); setDropdownOpen(false); }}
-                className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-text font-light transition-colors duration-150 hover:bg-[var(--border)] w-full cursor-pointer"
-              >
-                <LogOut size={14} className="text-text-muted" />
-                Log out
-              </button>
+          <>
+            {/* Nav links — visible in top bar */}
+            <div className="hidden sm:flex items-center gap-1">
+              {[
+                { href: "/", label: "Bounties", icon: Crosshair },
+                { href: "/stats", label: "Stats", icon: BarChart3 },
+                { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+              ].map(({ href, label, icon: Icon }) => {
+                const active = pathname === href;
+                return (
+                  <Link
+                    key={href}
+                    href={href}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-light transition-colors duration-150 rounded-sm"
+                    style={{
+                      color: active ? "var(--text)" : "var(--text-muted)",
+                      background: active ? (isDark ? "rgba(255,255,255,0.05)" : "var(--surface)") : "transparent",
+                    }}
+                  >
+                    <Icon size={14} />
+                    {label}
+                  </Link>
+                );
+              })}
             </div>
-          </div>
+            <div className="relative" ref={dropdownRef}>
+              <button
+                onClick={() => setDropdownOpen(!dropdownOpen)}
+                className="flex items-center gap-2 cursor-pointer transition-colors duration-200"
+              >
+                <UserAvatar name={displayName} />
+                <span className="text-sm text-text font-light hidden sm:inline">{truncatedName}</span>
+                <ChevronDown
+                  size={13}
+                  className="text-text-muted transition-transform duration-200"
+                  style={{ transform: dropdownOpen ? "rotate(180deg)" : "rotate(0)" }}
+                />
+              </button>
+              <div
+                className="absolute right-0 top-[calc(100%+8px)] min-w-[180px] py-1 overflow-hidden"
+                style={{
+                  background: "var(--surface)",
+                  border: dropdownOpen ? "1px solid var(--border-strong)" : "1px solid transparent",
+                  borderRadius: isDark ? "2px" : "10px",
+                  boxShadow: dropdownOpen
+                    ? isDark
+                      ? "0 8px 24px rgba(0,0,0,0.5)"
+                      : "0 8px 32px rgba(45,41,38,0.12)"
+                    : "none",
+                  opacity: dropdownOpen ? 1 : 0,
+                  transform: dropdownOpen ? "translateY(0) scaleY(1)" : "translateY(-4px) scaleY(0.96)",
+                  transformOrigin: "top right",
+                  transition: "opacity 0.15s ease, transform 0.15s ease",
+                  pointerEvents: dropdownOpen ? "auto" : "none",
+                }}
+              >
+                {/* Mobile-only nav links */}
+                <div className="sm:hidden">
+                  <Link
+                    href="/"
+                    onClick={() => setDropdownOpen(false)}
+                    className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-text font-light transition-colors duration-150 hover:bg-[var(--border)]"
+                  >
+                    <Crosshair size={14} className="text-text-muted" />
+                    Bounties
+                  </Link>
+                  <Link
+                    href="/stats"
+                    onClick={() => setDropdownOpen(false)}
+                    className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-text font-light transition-colors duration-150 hover:bg-[var(--border)]"
+                  >
+                    <BarChart3 size={14} className="text-text-muted" />
+                    Stats
+                  </Link>
+                  <Link
+                    href="/dashboard"
+                    onClick={() => setDropdownOpen(false)}
+                    className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-text font-light transition-colors duration-150 hover:bg-[var(--border)]"
+                  >
+                    <LayoutDashboard size={14} className="text-text-muted" />
+                    Dashboard
+                  </Link>
+                  <div style={{ height: 1, background: "var(--border)", margin: "4px 0" }} />
+                </div>
+                <Link
+                  href="/settings"
+                  onClick={() => setDropdownOpen(false)}
+                  className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-text font-light transition-colors duration-150 hover:bg-[var(--border)]"
+                >
+                  <Settings size={14} className="text-text-muted" />
+                  Settings
+                </Link>
+                <div style={{ height: 1, background: "var(--border)", margin: "4px 0" }} />
+                <button
+                  onClick={() => { signOut({ callbackUrl: "/" }); setDropdownOpen(false); }}
+                  className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-text font-light transition-colors duration-150 hover:bg-[var(--border)] w-full cursor-pointer"
+                >
+                  <LogOut size={14} className="text-text-muted" />
+                  Log out
+                </button>
+              </div>
+            </div>
+          </>
         ) : (
           <>
             <a
