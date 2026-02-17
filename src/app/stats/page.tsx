@@ -619,8 +619,8 @@ function CreatorDashboard({ isDark }: { isDark: boolean }) {
       <div className="mb-5">
         <Section title="Recent Applications" isDark={isDark}>
           <div className="space-y-2">
-            {CREATOR_APPLICATIONS.slice().reverse().map((a) => (
-              <ApplicationRow key={a.id} app={a} isDark={isDark} />
+            {applications.map((a) => (
+              <ApplicationRow key={a.id} app={a} isDark={isDark} onRescind={handleRescind} />
             ))}
           </div>
         </Section>
@@ -691,10 +691,10 @@ function ActiveBountyRow({ bounty, isDark }: { bounty: ActiveBountyWork; isDark:
 }
 
 /* ─── Application Row ──────────────────────────────────────────────── */
-function ApplicationRow({ app, isDark }: { app: CreatorApplication; isDark: boolean }) {
+function ApplicationRow({ app, isDark, onRescind }: { app: CreatorApplication; isDark: boolean; onRescind?: (id: string) => void }) {
   return (
     <div
-      className="flex items-center justify-between py-2.5 px-3 gap-3"
+      className="flex items-center justify-between py-2.5 px-3 gap-3 transition-all duration-300"
       style={{
         borderBottom: "1px solid var(--border)",
       }}
@@ -707,7 +707,25 @@ function ApplicationRow({ app, isDark }: { app: CreatorApplication; isDark: bool
           <span className="font-mono text-[10px] text-text-muted">{shortDate(app.dateApplied)}</span>
         </div>
       </div>
-      <StatusBadge status={app.status} isDark={isDark} />
+      <div className="flex items-center gap-3">
+        <StatusBadge status={app.status} isDark={isDark} />
+        {app.status === "pending" && onRescind && (
+          <button
+            onClick={() => onRescind(app.id)}
+            className="font-mono text-[10px] uppercase tracking-[0.08em] px-2 py-0.5 transition-colors duration-150 cursor-pointer"
+            style={{
+              color: isDark ? "#c67a5c" : "#a8506e",
+              background: "transparent",
+              border: "none",
+              opacity: 0.7,
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.opacity = "1"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.opacity = "0.7"; }}
+          >
+            Rescind
+          </button>
+        )}
+      </div>
     </div>
   );
 }
