@@ -275,7 +275,7 @@ export default function SettingsPage() {
               }}
             >
               <div className="flex items-center gap-2.5 mb-3">
-                <Trash2 size={16} style={{ color: "#e25555" }} />
+                <AlertTriangle size={16} style={{ color: "#e25555" }} />
                 <h2 className="font-light text-lg" style={{ color: "#e25555" }}>Danger Zone</h2>
               </div>
               <p className="text-text-muted text-sm font-light mb-4">

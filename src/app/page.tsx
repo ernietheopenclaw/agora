@@ -660,6 +660,7 @@ export default function Home() {
   const [followerMax, setFollowerMax] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("newest");
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
 
   useEffect(() => {
     fetch("/api/bounties")
@@ -770,46 +771,139 @@ export default function Home() {
 
         {/* Search & Filters */}
         <section className="px-6 md:px-12 lg:px-24 pb-6">
-          {/* Mobile: stacked layout */}
+          {/* Mobile: compact bar + bottom sheet */}
           <div className="flex flex-col gap-3 md:hidden">
-            <div className="flex items-center gap-2 text-text-muted">
-              <Filter size={14} />
-              <span className="font-mono text-[11px] uppercase tracking-wider">
-                Filter{activeFilterCount > 0 && ` (${activeFilterCount})`}
-              </span>
-              {activeFilterCount > 0 && (
-                <button
-                  onClick={() => { setPlatformFilters([]); setNicheFilters([]); setPayMin(""); setPayMax(""); setFollowerMin(""); setFollowerMax(""); setSortBy("newest"); }}
-                  className="font-mono text-[11px] uppercase tracking-wider text-accent-mid hover:text-accent transition-colors ml-auto"
-                >
-                  Clear all
-                </button>
-              )}
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <MultiDropdown label="Platform" options={PLATFORMS.map((p) => ({ label: p, value: p }))} values={platformFilters} onChange={setPlatformFilters} isDark={isDark} />
-              <MultiDropdown label="Niche" options={NICHES.map((n) => ({ label: n, value: n }))} values={nicheFilters} onChange={setNicheFilters} isDark={isDark} />
-              <Dropdown label="Sort" options={SORT_OPTIONS} value={sortBy} onChange={setSortBy} isDark={isDark} />
-            </div>
-            <div className="flex items-center gap-1.5">
-              <Label>Budget</Label>
-              <PayStepper value={payMin} onChange={setPayMin} placeholder="Min $" isDark={isDark} />
-              <span className="text-text-muted text-[11px] font-mono">–</span>
-              <PayStepper value={payMax} onChange={setPayMax} placeholder="Max $" isDark={isDark} />
-            </div>
-            <div className="flex items-center gap-1.5">
-              <Label>Followers</Label>
-              <NumberStepper value={followerMin} onChange={setFollowerMin} placeholder="Min" isDark={isDark} />
-              <span className="text-text-muted text-[11px] font-mono">–</span>
-              <NumberStepper value={followerMax} onChange={setFollowerMax} placeholder="Max" isDark={isDark} />
-            </div>
             <div className="relative">
               <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" />
               <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search bounties or brands..." className="w-full pl-9 pr-4 font-light text-sm text-text placeholder:text-text-muted outline-none transition-all duration-200" style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: isDark ? "2px" : "8px", height: "36px", boxShadow: isDark ? "none" : "0 1px 3px rgba(45,41,38,0.04)" }} onFocus={(e) => (e.currentTarget.style.borderColor = "var(--border-strong)")} onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border)")} />
               {searchQuery && (<button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text transition-colors cursor-pointer"><X size={13} /></button>)}
             </div>
-            <span className="font-mono text-[11px] text-text-muted">{filtered.length} bounties</span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowMobileFilters(true)}
+                className="inline-flex items-center gap-1.5 px-3 font-mono text-[11px] uppercase tracking-wider transition-all duration-200 cursor-pointer"
+                style={{
+                  background: "var(--surface)",
+                  color: activeFilterCount > 0 ? "var(--text)" : "var(--text-muted)",
+                  border: `1px solid ${activeFilterCount > 0 ? "var(--accent-mid)" : "var(--border)"}`,
+                  borderRadius: isDark ? "2px" : "8px",
+                  height: "36px",
+                  boxShadow: isDark ? "none" : "0 1px 3px rgba(45,41,38,0.04)",
+                }}
+              >
+                <Filter size={13} />
+                <span>Filters</span>
+                {activeFilterCount > 0 && (
+                  <span
+                    className="flex items-center justify-center text-[10px] font-bold leading-none"
+                    style={{
+                      background: "var(--accent-mid)",
+                      color: "#fff",
+                      width: "16px",
+                      height: "16px",
+                      borderRadius: "50%",
+                    }}
+                  >
+                    {activeFilterCount}
+                  </span>
+                )}
+              </button>
+              <div className="flex-1 min-w-0" style={{ maxWidth: "160px" }}>
+                <Dropdown label="Sort" options={SORT_OPTIONS} value={sortBy} onChange={setSortBy} isDark={isDark} />
+              </div>
+              <span className="font-mono text-[11px] text-text-muted ml-auto whitespace-nowrap">{filtered.length} bounties</span>
+            </div>
           </div>
+
+          {/* Mobile filter bottom sheet */}
+          {showMobileFilters && (
+            <div className="fixed inset-0 z-[100] md:hidden">
+              {/* Backdrop */}
+              <div
+                className="absolute inset-0"
+                style={{ background: "rgba(0,0,0,0.5)" }}
+                onClick={() => setShowMobileFilters(false)}
+              />
+              {/* Sheet */}
+              <div
+                className="absolute bottom-0 left-0 right-0 flex flex-col"
+                style={{
+                  background: "var(--surface)",
+                  borderTop: "1px solid var(--border)",
+                  borderRadius: isDark ? "2px 2px 0 0" : "16px 16px 0 0",
+                  maxHeight: "85vh",
+                  animation: "slideUp 0.25s ease-out",
+                }}
+              >
+                {/* Header */}
+                <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: "1px solid var(--border)" }}>
+                  <span className="font-mono text-sm uppercase tracking-wider text-text">Filters</span>
+                  <div className="flex items-center gap-3">
+                    {activeFilterCount > 0 && (
+                      <button
+                        onClick={() => { setPlatformFilters([]); setNicheFilters([]); setPayMin(""); setPayMax(""); setFollowerMin(""); setFollowerMax(""); }}
+                        className="font-mono text-[11px] uppercase tracking-wider text-accent-mid hover:text-accent transition-colors"
+                      >
+                        Clear all
+                      </button>
+                    )}
+                    <button
+                      onClick={() => setShowMobileFilters(false)}
+                      className="text-text-muted hover:text-text transition-colors cursor-pointer"
+                    >
+                      <X size={18} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Filter controls */}
+                <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-5">
+                  <div className="flex flex-col gap-2">
+                    <Label>Platform</Label>
+                    <MultiDropdown label="All Platforms" options={PLATFORMS.map((p) => ({ label: p, value: p }))} values={platformFilters} onChange={setPlatformFilters} isDark={isDark} />
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <Label>Niche</Label>
+                    <MultiDropdown label="All Niches" options={NICHES.map((n) => ({ label: n, value: n }))} values={nicheFilters} onChange={setNicheFilters} isDark={isDark} />
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <Label>Budget Range</Label>
+                    <div className="flex items-center gap-1.5">
+                      <PayStepper value={payMin} onChange={setPayMin} placeholder="Min $" isDark={isDark} />
+                      <span className="text-text-muted text-[11px] font-mono">–</span>
+                      <PayStepper value={payMax} onChange={setPayMax} placeholder="Max $" isDark={isDark} />
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <Label>Follower Range</Label>
+                    <div className="flex items-center gap-1.5">
+                      <NumberStepper value={followerMin} onChange={setFollowerMin} placeholder="Min" isDark={isDark} />
+                      <span className="text-text-muted text-[11px] font-mono">–</span>
+                      <NumberStepper value={followerMax} onChange={setFollowerMax} placeholder="Max" isDark={isDark} />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Footer */}
+                <div className="px-5 py-4" style={{ borderTop: "1px solid var(--border)" }}>
+                  <button
+                    onClick={() => setShowMobileFilters(false)}
+                    className="w-full font-mono text-sm uppercase tracking-wider transition-all duration-200 cursor-pointer"
+                    style={{
+                      background: "var(--accent-mid)",
+                      color: "#fff",
+                      height: "44px",
+                      borderRadius: isDark ? "2px" : "10px",
+                      border: "none",
+                    }}
+                  >
+                    Done · {filtered.length} bounties
+                  </button>
+                </div>
+              </div>
+              <style>{`@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }`}</style>
+            </div>
+          )}
 
           {/* Desktop: fixed CSS grid layout — NO flex-wrap, columns are fixed width */}
           <div className="hidden md:block">

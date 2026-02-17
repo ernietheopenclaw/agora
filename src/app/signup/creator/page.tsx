@@ -237,8 +237,6 @@ export default function CreatorSignupPage() {
 
           <div className="mt-8 text-center text-sm text-text-muted">
             Already have an account? <Link href="/login" className="text-accent-mid hover:underline">Sign in</Link>
-            <br />
-            <Link href="/signup/company" className="text-accent-mid hover:underline">Sign up as a Company instead</Link>
           </div>
         </div>
       </div>

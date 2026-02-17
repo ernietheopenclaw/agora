@@ -4,7 +4,7 @@ import { useSession, signOut } from "next-auth/react";
 import { useTheme } from "../app/theme-provider";
 import { SpinningLogo } from "./SpinningLogo";
 import { AgoraLogo } from "./AgoraLogo";
-import { Sun, Moon, ArrowRight, LogOut, Settings, ChevronDown, BarChart3, Crosshair, UserCircle } from "lucide-react";
+import { Sun, Moon, ArrowRight, LogOut, Settings, ChevronDown, UserCircle } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
@@ -55,7 +55,7 @@ export function Navbar() {
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
-  const displayName = session?.user?.name || session?.user?.email || "";
+  const displayName = session?.user?.name || "";
   const truncatedName = displayName.length > 20 ? displayName.slice(0, 18) + "…" : displayName;
   const userImage = session?.user?.image;
 
@@ -87,9 +87,9 @@ export function Navbar() {
             {/* Nav links — visible in top bar */}
             <div className="hidden sm:flex items-center gap-1">
               {[
-                { href: "/", label: "Bounties", icon: Crosshair },
-                { href: "/stats", label: "Dashboard", icon: BarChart3 },
-              ].map(({ href, label, icon: Icon }) => {
+                { href: "/", label: "Bounties" },
+                { href: "/stats", label: "Dashboard" },
+              ].map(({ href, label }) => {
                 const active = pathname === href;
                 return (
                   <Link
@@ -101,7 +101,6 @@ export function Navbar() {
                       background: active ? (isDark ? "rgba(255,255,255,0.05)" : "var(--surface)") : "transparent",
                     }}
                   >
-                    <Icon size={14} />
                     {label}
                   </Link>
                 );
@@ -145,7 +144,6 @@ export function Navbar() {
                     onClick={() => setDropdownOpen(false)}
                     className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-text font-light transition-colors duration-150 hover:bg-[var(--border)]"
                   >
-                    <Crosshair size={14} className="text-text-muted" />
                     Bounties
                   </Link>
                   <Link
@@ -153,7 +151,6 @@ export function Navbar() {
                     onClick={() => setDropdownOpen(false)}
                     className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-text font-light transition-colors duration-150 hover:bg-[var(--border)]"
                   >
-                    <BarChart3 size={14} className="text-text-muted" />
                     Dashboard
                   </Link>
                   <Link
@@ -185,12 +182,9 @@ export function Navbar() {
                 <div style={{ height: 1, background: "var(--border)", margin: "4px 0" }} />
                 <button
                   onClick={(e) => { e.preventDefault(); toggle(); }}
-                  className="flex items-center justify-between px-4 py-2.5 text-sm text-text font-light transition-colors duration-150 hover:bg-[var(--border)] w-full cursor-pointer"
+                  className="flex items-center justify-center px-4 py-2.5 transition-colors duration-150 hover:bg-[var(--border)] w-full cursor-pointer"
                 >
-                  <span className="flex items-center gap-2.5">
-                    {isDark ? <Sun size={14} className="text-text-muted" /> : <Moon size={14} className="text-text-muted" />}
-                    {isDark ? "Light Mode" : "Dark Mode"}
-                  </span>
+                  {isDark ? <Sun size={14} className="text-text-muted" /> : <Moon size={14} className="text-text-muted" />}
                 </button>
                 <div style={{ height: 1, background: "var(--border)", margin: "4px 0" }} />
                 <button
@@ -207,12 +201,12 @@ export function Navbar() {
           <>
             <a
               href="/login"
-              className="text-sm text-text-muted hover:text-text transition-colors login-underline"
+              className="text-sm text-text hover:text-text transition-colors login-underline"
             >
               Log in
             </a>
             <a
-              href="/signup"
+              href="/signup/creator"
               className="cta-party hidden sm:inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-sm transition-all"
               style={{ color: "#fff" }}
             >

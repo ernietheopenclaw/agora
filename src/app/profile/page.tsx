@@ -375,8 +375,38 @@ export default function ProfilePage() {
         <CanvasBackdrop />
         <div className="relative" style={{ zIndex: 1 }}>
           <Navbar />
-          <div className="pt-28 pb-24 px-6 md:px-12 lg:px-24 flex justify-center">
-            <SpinnerIcon />
+          <div className="pt-28 pb-24 px-6 md:px-12 lg:px-24">
+            <div className="max-w-2xl mx-auto">
+              {/* Skeleton profile card */}
+              <div className="p-6 md:p-8" style={{
+                background: "var(--surface)",
+                border: "1px solid var(--border)",
+                borderRadius: isDark ? "2px" : "10px",
+              }}>
+                <div className="flex items-start gap-5 mb-6">
+                  {/* Avatar skeleton */}
+                  <div className="skeleton-shimmer flex-shrink-0" style={{ width: 80, height: 80, borderRadius: "50%" }} />
+                  <div className="flex-1 min-w-0 pt-1">
+                    {/* Name + badge */}
+                    <div className="flex items-center gap-2.5 mb-2">
+                      <div className="skeleton-shimmer" style={{ width: 140, height: 20 }} />
+                      <div className="skeleton-shimmer" style={{ width: 60, height: 20, borderRadius: isDark ? "2px" : "6px" }} />
+                    </div>
+                    {/* Social badges */}
+                    <div className="flex gap-2 mt-3">
+                      <div className="skeleton-shimmer" style={{ width: 90, height: 24, borderRadius: isDark ? "2px" : "999px" }} />
+                      <div className="skeleton-shimmer" style={{ width: 100, height: 24, borderRadius: isDark ? "2px" : "999px" }} />
+                    </div>
+                  </div>
+                </div>
+                {/* Bio skeleton */}
+                <div className="space-y-3">
+                  <div className="skeleton-shimmer" style={{ width: 50, height: 12 }} />
+                  <div className="skeleton-shimmer" style={{ width: "100%", height: 14 }} />
+                  <div className="skeleton-shimmer" style={{ width: "75%", height: 14 }} />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </>
@@ -403,8 +433,6 @@ export default function ProfilePage() {
         <Navbar />
         <div className="pt-28 pb-24 px-6 md:px-12 lg:px-24">
           <div className="max-w-2xl mx-auto">
-            <h1 className="text-text font-extralight text-3xl mb-8">Profile</h1>
-
             {/* Hidden file input for avatar */}
             <input
               ref={fileInputRef}
@@ -416,35 +444,8 @@ export default function ProfilePage() {
 
             {/* ── Profile Card ─────────────────────────────── */}
             <div className="p-6 md:p-8" style={cardStyle}>
-              {/* Edit button top-right */}
-              {!editing && (
-                <div className="flex justify-end mb-2 -mt-1">
-                  <button
-                    onClick={startEditing}
-                    className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 cursor-pointer transition-colors"
-                    style={{
-                      color: "var(--text-muted)",
-                      background: "transparent",
-                      border: "1px solid var(--border)",
-                      borderRadius: isDark ? "2px" : "6px",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = "var(--border-strong)";
-                      e.currentTarget.style.color = "var(--text)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = "var(--border)";
-                      e.currentTarget.style.color = "var(--text-muted)";
-                    }}
-                  >
-                    <PencilIcon />
-                    Edit
-                  </button>
-                </div>
-              )}
-
               {/* Avatar + Name + Email + Badges */}
-              <div className="flex items-start gap-5 mb-6">
+              <div className="flex items-start gap-5 mb-6 justify-between">
                 {/* Avatar */}
                 <div className="relative flex-shrink-0">
                   <div
@@ -506,8 +507,6 @@ export default function ProfilePage() {
                       {data.role.toUpperCase()}
                     </span>
                   </div>
-                  <p className="text-text-muted text-sm font-light mb-3">{data.email}</p>
-
                   {/* Connected account badges + link button */}
                   <div className="flex flex-wrap items-center gap-2">
                     {connectedAccounts.map((p) => (
@@ -572,6 +571,31 @@ export default function ProfilePage() {
                     )}
                   </div>
                 </div>
+
+                {/* Edit button */}
+                {!editing && (
+                  <button
+                    onClick={startEditing}
+                    className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 cursor-pointer transition-colors flex-shrink-0"
+                    style={{
+                      color: "var(--text-muted)",
+                      background: "transparent",
+                      border: "1px solid var(--border)",
+                      borderRadius: isDark ? "2px" : "6px",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = "var(--border-strong)";
+                      e.currentTarget.style.color = "var(--text)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = "var(--border)";
+                      e.currentTarget.style.color = "var(--text-muted)";
+                    }}
+                  >
+                    <PencilIcon />
+                    Edit
+                  </button>
+                )}
               </div>
 
               {/* ── View / Edit mode for fields ─────────────── */}
@@ -646,14 +670,6 @@ export default function ProfilePage() {
                 </>
               ) : (
                 <div className="space-y-4">
-                  {displayName && (
-                    <div>
-                      <label className="block text-xs font-mono uppercase tracking-wider text-text-muted mb-1">
-                        Display Name
-                      </label>
-                      <p className="text-text text-sm font-light">{displayName}</p>
-                    </div>
-                  )}
                   <div>
                     <label className="block text-xs font-mono uppercase tracking-wider text-text-muted mb-1">
                       Bio
@@ -790,7 +806,7 @@ export default function ProfilePage() {
               {linkStep === "verify" && linkPlatform && (
                 <div>
                   <p className="text-text text-sm font-light mb-4 leading-relaxed">
-                    Add this code to your <strong style={{ color: linkPlatform.color }}>{linkPlatform.name}</strong> bio, then click Verify.
+                    Send this code as a message to <strong style={{ color: linkPlatform.color }}>@useagora</strong>, then click Verify.
                   </p>
                   <div
                     className="flex items-center justify-between px-4 py-3 mb-5"

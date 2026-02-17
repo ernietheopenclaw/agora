@@ -577,11 +577,18 @@ function CreatorDashboard({ isDark }: { isDark: boolean }) {
     () => CREATOR_APPLICATIONS.slice().reverse()
   );
 
+  const [rescindTarget, setRescindTarget] = useState<string | null>(null);
+
   const handleRescind = useCallback((id: string) => {
-    if (!confirm("Are you sure you want to rescind this application?")) return;
-    // For real data: fetch(`/api/applications/${id}`, { method: "DELETE" })
-    setApplications((prev) => prev.filter((a) => a.id !== id));
+    setRescindTarget(id);
   }, []);
+
+  const confirmRescind = useCallback(() => {
+    if (!rescindTarget) return;
+    // For real data: fetch(`/api/applications/${rescindTarget}`, { method: "DELETE" })
+    setApplications((prev) => prev.filter((a) => a.id !== rescindTarget));
+    setRescindTarget(null);
+  }, [rescindTarget]);
 
   return (
     <>
@@ -630,6 +637,56 @@ function CreatorDashboard({ isDark }: { isDark: boolean }) {
       <Section title="Payment History" isDark={isDark}>
         <PaymentTable payments={PAYMENT_HISTORY} isDark={isDark} />
       </Section>
+
+      {/* Rescind Confirmation Dialog */}
+      {rescindTarget && (
+        <div
+          className="fixed inset-0 flex items-center justify-center p-4"
+          style={{ zIndex: 100, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
+          onClick={(e) => { if (e.target === e.currentTarget) setRescindTarget(null); }}
+        >
+          <div
+            className="w-full max-w-sm p-6"
+            style={{
+              background: "var(--surface)",
+              border: "1px solid var(--border)",
+              borderRadius: isDark ? "2px" : "10px",
+              boxShadow: isDark ? "0 8px 24px rgba(0,0,0,0.5)" : "0 8px 32px rgba(45,41,38,0.12)",
+            }}
+          >
+            <h3 className="text-text font-light text-lg mb-2">Rescind Application</h3>
+            <p className="text-text-muted text-sm mb-6">Are you sure you want to rescind this application? This action cannot be undone.</p>
+            <div className="flex items-center gap-3 justify-end">
+              <button
+                onClick={() => setRescindTarget(null)}
+                className="px-4 py-2 text-sm font-medium cursor-pointer transition-colors"
+                style={{
+                  background: "transparent",
+                  color: "var(--text-muted)",
+                  border: "1px solid var(--border)",
+                  borderRadius: isDark ? "2px" : "8px",
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--border-strong)"; e.currentTarget.style.color = "var(--text)"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--text-muted)"; }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmRescind}
+                className="px-4 py-2 text-sm font-medium cursor-pointer transition-all"
+                style={{
+                  background: isDark ? "#c67a5c" : "#a8506e",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: isDark ? "2px" : "8px",
+                }}
+              >
+                Rescind
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
@@ -708,7 +765,6 @@ function ApplicationRow({ app, isDark, onRescind }: { app: CreatorApplication; i
         </div>
       </div>
       <div className="flex items-center gap-3">
-        <StatusBadge status={app.status} isDark={isDark} />
         {app.status === "pending" && onRescind && (
           <button
             onClick={() => onRescind(app.id)}
@@ -725,6 +781,7 @@ function ApplicationRow({ app, isDark, onRescind }: { app: CreatorApplication; i
             Rescind
           </button>
         )}
+        <StatusBadge status={app.status} isDark={isDark} />
       </div>
     </div>
   );
