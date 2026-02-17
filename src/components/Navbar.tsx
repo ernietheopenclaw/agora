@@ -3,6 +3,7 @@
 import { useSession, signOut } from "next-auth/react";
 import { useTheme } from "../app/theme-provider";
 import { SpinningLogo } from "./SpinningLogo";
+import { AgoraLogo } from "./AgoraLogo";
 import { Sun, Moon, ArrowRight, LogOut, Settings, ChevronDown, BarChart3, LayoutDashboard, Crosshair } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { usePathname } from "next/navigation";
@@ -62,7 +63,7 @@ export function Navbar() {
         </div>
       ) : (
         <Link href="/" className="flex items-center gap-2">
-          <SpinningLogo size={24} />
+          <AgoraLogo size={24} />
           <span className="text-base font-light tracking-tight text-text">agora</span>
         </Link>
       )}
