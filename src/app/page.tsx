@@ -466,7 +466,7 @@ export default function Home() {
               Log in
             </a>
             <a
-              href="/signup/creator"
+              href="/signup"
               className="cta-party hidden sm:inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-sm transition-all"
               style={{ color: "#fff" }}
             >
@@ -505,14 +505,14 @@ export default function Home() {
             </p>
             <div className="mt-6 flex flex-col sm:flex-row gap-3">
               <a
-                href="/signup/creator"
+                href="/signup"
                 className="cta-party inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-sm transition-all"
                 style={{ color: "#fff" }}
               >
                 Claim Your First Bounty <ArrowRight size={14} />
               </a>
               <a
-                href="/signup/company"
+                href="/signup"
                 className="btn-outline-draw inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-sm border transition-all text-text-muted hover:text-text"
                 style={{ borderColor: "var(--border-strong)" }}
               >
@@ -694,7 +694,7 @@ export default function Home() {
               </p>
             </div>
             <a
-              href="/signup/creator"
+              href="/signup"
               className="cta-party inline-flex items-center gap-2 px-6 py-3 text-sm font-medium rounded-sm transition-all flex-shrink-0"
               style={{ color: "#fff" }}
             >
