@@ -15,6 +15,7 @@ import {
   ChevronDown,
   ChevronUp,
   Search,
+  ArrowUpDown,
 } from "lucide-react";
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
@@ -355,21 +356,6 @@ function Dropdown({
           pointerEvents: open ? "auto" : "none",
         }}
       >
-        <div
-          className="font-mono text-[11px] uppercase tracking-wider px-3 cursor-pointer transition-colors duration-150"
-          style={{
-            height: "36px",
-            display: "flex",
-            alignItems: "center",
-            color: !value ? "var(--text)" : "var(--text-muted)",
-            background: !value ? (isDark ? "rgba(255,255,255,0.05)" : "var(--surface-raised, #e8e4df)") : "transparent",
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = isDark ? "rgba(255,255,255,0.05)" : "var(--surface-raised, #e8e4df)")}
-          onMouseLeave={(e) => (e.currentTarget.style.background = !value ? (isDark ? "rgba(255,255,255,0.05)" : "var(--surface-raised, #e8e4df)") : "transparent")}
-          onClick={() => { onChange(""); setOpen(false); }}
-        >
-          {label}
-        </div>
         {options.map((o) => (
           <div
             key={o.value}
@@ -388,6 +374,123 @@ function Dropdown({
             {o.label}
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+function MultiDropdown({
+  label,
+  options,
+  values,
+  onChange,
+  isDark,
+}: {
+  label: string;
+  options: { label: string; value: string }[];
+  values: string[];
+  onChange: (v: string[]) => void;
+  isDark?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  const buttonText = values.length === 0
+    ? label
+    : values.length === 1
+      ? options.find((o) => o.value === values[0])?.label || values[0]
+      : `${label} (${values.length})`;
+
+  const toggle = (v: string) => {
+    onChange(values.includes(v) ? values.filter((x) => x !== v) : [...values, v]);
+  };
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex items-center gap-1.5 cursor-pointer font-mono text-[11px] uppercase tracking-wider px-3 transition-all duration-200 w-full justify-between overflow-hidden"
+        style={{
+          background: "var(--surface)",
+          color: values.length > 0 ? "var(--text)" : "var(--text-muted)",
+          border: `1px solid ${open ? "var(--border-strong)" : "var(--border)"}`,
+          borderRadius: isDark ? "2px" : "8px",
+          height: "36px",
+          boxShadow: !isDark ? "0 1px 3px rgba(45,41,38,0.04)" : "none",
+        }}
+      >
+        <span className="truncate">{buttonText}</span>
+        <ChevronDown
+          size={12}
+          className="text-text-muted transition-transform duration-200 flex-shrink-0"
+          style={{ transform: open ? "rotate(180deg)" : "rotate(0deg)" }}
+        />
+      </button>
+      <div
+        className="absolute left-0 top-[calc(100%+4px)] min-w-full z-50 overflow-hidden"
+        style={{
+          background: "var(--surface)",
+          border: open ? "1px solid var(--border-strong)" : "1px solid transparent",
+          borderRadius: isDark ? "2px" : "10px",
+          boxShadow: open
+            ? isDark
+              ? "0 8px 24px rgba(0,0,0,0.5)"
+              : "0 8px 32px rgba(45,41,38,0.12)"
+            : "none",
+          opacity: open ? 1 : 0,
+          transform: open ? "translateY(0) scaleY(1)" : "translateY(-4px) scaleY(0.96)",
+          transformOrigin: "top",
+          transition: "opacity 0.15s ease, transform 0.15s ease",
+          pointerEvents: open ? "auto" : "none",
+        }}
+      >
+        {options.map((o) => {
+          const selected = values.includes(o.value);
+          return (
+            <div
+              key={o.value}
+              className="font-mono text-[11px] uppercase tracking-wider px-3 cursor-pointer transition-colors duration-150 select-none"
+              style={{
+                height: "36px",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                color: selected ? "var(--accent-mid, var(--accent))" : "var(--text)",
+                background: selected ? (isDark ? "rgba(255,255,255,0.05)" : "var(--surface-raised, #e8e4df)") : "transparent",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = isDark ? "rgba(255,255,255,0.05)" : "var(--surface-raised, #e8e4df)")}
+              onMouseLeave={(e) => (e.currentTarget.style.background = selected ? (isDark ? "rgba(255,255,255,0.05)" : "var(--surface-raised, #e8e4df)") : "transparent")}
+              onClick={() => toggle(o.value)}
+            >
+              <span
+                className="flex items-center justify-center flex-shrink-0"
+                style={{
+                  width: "14px",
+                  height: "14px",
+                  borderRadius: isDark ? "2px" : "3px",
+                  border: selected ? "none" : `1.5px solid ${isDark ? "rgba(255,255,255,0.2)" : "var(--border-strong)"}`,
+                  background: selected ? "var(--accent-mid, var(--accent))" : "transparent",
+                  transition: "all 0.15s ease",
+                }}
+              >
+                {selected && (
+                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                    <path d="M2 5L4.5 7.5L8 3" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                )}
+              </span>
+              {o.label}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -474,8 +577,8 @@ export default function Home() {
 
   const [bounties, setBounties] = useState<Bounty[]>([]);
   const [loading, setLoading] = useState(true);
-  const [platformFilter, setPlatformFilter] = useState("");
-  const [nicheFilter, setNicheFilter] = useState("");
+  const [platformFilters, setPlatformFilters] = useState<string[]>([]);
+  const [nicheFilters, setNicheFilters] = useState<string[]>([]);
   const [payRange, setPayRange] = useState(0); // index into PAY_RANGES
   const [followerMin, setFollowerMin] = useState("");
   const [followerMax, setFollowerMax] = useState("");
@@ -500,8 +603,9 @@ export default function Home() {
   const filtered = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
     return bounties.filter((b) => {
-      if (platformFilter && b.platform !== platformFilter) return false;
-      if (nicheFilter && b.niche !== nicheFilter) return false;
+      if (platformFilters.length > 0 && !platformFilters.includes(b.platform)) return false;
+      if (nicheFilters.length > 0 && b.niche && !nicheFilters.includes(b.niche)) return false;
+      if (nicheFilters.length > 0 && !b.niche) return false;
       const range = PAY_RANGES[payRange];
       if (b.budget < range.min || b.budget > range.max) return false;
       {
@@ -516,9 +620,9 @@ export default function Home() {
       }
       return true;
     });
-  }, [bounties, platformFilter, nicheFilter, payRange, followerMin, followerMax, searchQuery]);
+  }, [bounties, platformFilters, nicheFilters, payRange, followerMin, followerMax, searchQuery]);
 
-  const activeFilterCount = [platformFilter, nicheFilter, payRange > 0, followerMin, followerMax].filter(Boolean).length;
+  const activeFilterCount = [platformFilters.length > 0, nicheFilters.length > 0, payRange > 0, followerMin, followerMax].filter(Boolean).length;
 
   return (
     <>
@@ -573,7 +677,7 @@ export default function Home() {
               </span>
               {activeFilterCount > 0 && (
                 <button
-                  onClick={() => { setPlatformFilter(""); setNicheFilter(""); setPayRange(0); setFollowerMin(""); setFollowerMax(""); }}
+                  onClick={() => { setPlatformFilters([]); setNicheFilters([]); setPayRange(0); setFollowerMin(""); setFollowerMax(""); }}
                   className="font-mono text-[11px] uppercase tracking-wider text-accent-mid hover:text-accent transition-colors ml-auto"
                 >
                   Clear all
@@ -581,8 +685,8 @@ export default function Home() {
               )}
             </div>
             <div className="grid grid-cols-2 gap-2">
-              <Dropdown label="Platform" options={PLATFORMS.map((p) => ({ label: p, value: p }))} value={platformFilter} onChange={setPlatformFilter} isDark={isDark} />
-              <Dropdown label="Niche" options={NICHES.map((n) => ({ label: n, value: n }))} value={nicheFilter} onChange={setNicheFilter} isDark={isDark} />
+              <MultiDropdown label="Platform" options={PLATFORMS.map((p) => ({ label: p, value: p }))} values={platformFilters} onChange={setPlatformFilters} isDark={isDark} />
+              <MultiDropdown label="Niche" options={NICHES.map((n) => ({ label: n, value: n }))} values={nicheFilters} onChange={setNicheFilters} isDark={isDark} />
               <Dropdown label="Pay Range" options={PAY_RANGES.slice(1).map((r, i) => ({ label: r.label, value: String(i + 1) }))} value={payRange > 0 ? String(payRange) : ""} onChange={(v) => setPayRange(v ? parseInt(v) : 0)} isDark={isDark} />
             </div>
             <div className="flex items-center gap-1.5">
@@ -607,8 +711,8 @@ export default function Home() {
                 Filter{activeFilterCount > 0 && ` (${activeFilterCount})`}
               </span>
             </div>
-            <Dropdown label="Platform" options={PLATFORMS.map((p) => ({ label: p, value: p }))} value={platformFilter} onChange={setPlatformFilter} isDark={isDark} />
-            <Dropdown label="Niche" options={NICHES.map((n) => ({ label: n, value: n }))} value={nicheFilter} onChange={setNicheFilter} isDark={isDark} />
+            <MultiDropdown label="Platform" options={PLATFORMS.map((p) => ({ label: p, value: p }))} values={platformFilters} onChange={setPlatformFilters} isDark={isDark} />
+            <MultiDropdown label="Niche" options={NICHES.map((n) => ({ label: n, value: n }))} values={nicheFilters} onChange={setNicheFilters} isDark={isDark} />
             <Dropdown label="Pay Range" options={PAY_RANGES.slice(1).map((r, i) => ({ label: r.label, value: String(i + 1) }))} value={payRange > 0 ? String(payRange) : ""} onChange={(v) => setPayRange(v ? parseInt(v) : 0)} isDark={isDark} />
             <div className="flex items-center gap-1.5">
               <Label>Followers</Label>
@@ -623,7 +727,7 @@ export default function Home() {
             </div>
             <div className="flex items-center gap-3">
               {activeFilterCount > 0 && (
-                <button onClick={() => { setPlatformFilter(""); setNicheFilter(""); setPayRange(0); setFollowerMin(""); setFollowerMax(""); }} className="font-mono text-[11px] uppercase tracking-wider text-accent-mid hover:text-accent transition-colors whitespace-nowrap">
+                <button onClick={() => { setPlatformFilters([]); setNicheFilters([]); setPayRange(0); setFollowerMin(""); setFollowerMax(""); }} className="font-mono text-[11px] uppercase tracking-wider text-accent-mid hover:text-accent transition-colors whitespace-nowrap">
                   Clear all
                 </button>
               )}
@@ -639,8 +743,8 @@ export default function Home() {
               <p className="text-text-muted text-lg font-light">No bounties match your filters.</p>
               <button
                 onClick={() => {
-                  setPlatformFilter("");
-                  setNicheFilter("");
+                  setPlatformFilters([]);
+                  setNicheFilters([]);
                   setPayRange(0);
                   setFollowerMin("");
                   setFollowerMax("");
