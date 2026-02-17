@@ -11,6 +11,7 @@ import {
   DollarSign,
   X,
   ChevronDown,
+  Search,
 } from "lucide-react";
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
@@ -58,8 +59,23 @@ function extractFollowerReq(requirements: string | null): string | null {
   return `${num}+`;
 }
 
+function extractFollowerCount(requirements: string | null): number {
+  if (!requirements) return 0;
+  const match = requirements.match(/([\d,]+)\+?\s*(?:Instagram|TikTok|YouTube|Twitter|followers|subscribers)/i);
+  if (!match) return 0;
+  return parseInt(match[1].replace(/,/g, ""));
+}
+
 const ALL_PLATFORMS = ["Instagram", "TikTok", "YouTube", "Twitter/X"].sort();
 const ALL_NICHES = ["Fashion", "Food & Drink", "Tech", "Fitness", "Travel", "Beauty", "Pets", "Lifestyle", "Business"].sort();
+const FOLLOWER_RANGES = [
+  { label: "Any", value: "", max: Infinity },
+  { label: "1k+", value: "1000", max: 1000 },
+  { label: "5k+", value: "5000", max: 5000 },
+  { label: "10k+", value: "10000", max: 10000 },
+  { label: "15k+", value: "15000", max: 15000 },
+  { label: "25k+", value: "25000", max: 25000 },
+];
 const PAY_RANGES = [
   { label: "Any", min: 0, max: Infinity },
   { label: "$100–$300", min: 100, max: 300 },
@@ -112,24 +128,10 @@ function daysUntil(dateStr: string): number {
   return Math.max(0, Math.ceil((target.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
 }
 
-function BountyCard({ bounty, isDark, index = 0 }: { bounty: Bounty; isDark: boolean; index?: number }) {
-  const days = daysUntil(bounty.deadline);
-  const cardRef = useRef<HTMLAnchorElement>(null);
-
-  useEffect(() => {
-    const el = cardRef.current;
-    if (!el) return;
-    const timer = setTimeout(() => {
-      el.classList.add("bounty-card-visible");
-    }, 60 * index + 30);
-    return () => clearTimeout(timer);
-  }, [index]);
-
+function BountyCardShell({ isDark, children }: { isDark: boolean; children: React.ReactNode }) {
   return (
-    <Link
-      ref={cardRef}
-      href={`/bounty/${bounty.id}`}
-      className="bounty-card-enter group block p-5 md:p-6 transition-all duration-200"
+    <div
+      className="group block p-5 md:p-6 transition-all duration-200"
       style={{
         background: "var(--surface)",
         border: "1px solid var(--border)",
@@ -137,64 +139,122 @@ function BountyCard({ bounty, isDark, index = 0 }: { bounty: Bounty; isDark: boo
         boxShadow: isDark ? "none" : "0 1px 3px rgba(45,41,38,0.04)",
       }}
     >
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-2">
-            <PlatformIcon platform={bounty.platform} />
-            <Label>{bounty.platform}</Label>
-            <span className="text-text-muted text-[11px]">·</span>
-            <Label>{bounty.contentType}</Label>
+      {children}
+    </div>
+  );
+}
+
+function BountyCardContent({ bounty, isDark, index = 0, loaded }: { bounty?: Bounty; isDark: boolean; index?: number; loaded: boolean }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [revealed, setRevealed] = useState(false);
+
+  useEffect(() => {
+    if (!loaded || !bounty) return;
+    const timer = setTimeout(() => setRevealed(true), 80 * index + 50);
+    return () => clearTimeout(timer);
+  }, [loaded, bounty, index]);
+
+  const days = bounty ? daysUntil(bounty.deadline) : 0;
+
+  return (
+    <div ref={ref} className="relative" style={{ minHeight: "100px" }}>
+      {/* Skeleton layer */}
+      <div
+        className="transition-opacity duration-300"
+        style={{ opacity: revealed ? 0 : 1, pointerEvents: revealed ? "none" : "auto" }}
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="skeleton-shimmer w-[14px] h-[14px] rounded-full" />
+              <div className="skeleton-shimmer w-16 h-3" />
+              <div className="skeleton-shimmer w-12 h-3" />
+            </div>
+            <div className="skeleton-shimmer w-3/4 h-5 mb-2" />
+            <div className="skeleton-shimmer w-1/3 h-3 mt-1.5" />
           </div>
-          <h3 className="text-text font-light text-base md:text-lg leading-snug group-hover:text-accent-mid transition-colors duration-200">
-            {bounty.title}
-          </h3>
-          <p className="mt-1.5 text-text-muted text-sm font-light truncate">{bounty.company.companyName}</p>
+          <div className="text-right flex-shrink-0">
+            <div className="skeleton-shimmer w-20 h-7 ml-auto" />
+            <div className="skeleton-shimmer w-14 h-3 mt-2 ml-auto" />
+          </div>
         </div>
-        <div className="text-right flex-shrink-0">
-          <p className="text-text font-light text-xl md:text-2xl">${bounty.budget.toLocaleString()}</p>
-          {bounty.payPerImpression && (
-            <p className="font-mono text-[11px] text-accent-mid mt-0.5">
-              + {bounty.payPerImpression} impressions
-            </p>
-          )}
-          <div className="flex items-center gap-1 mt-1 justify-end">
-            <Clock size={11} className="text-text-muted" />
-            <span className="font-mono text-[11px] text-text-muted">
-              {days}d left
-            </span>
-          </div>
+        <div className="mt-3 flex items-center gap-2">
+          <div className="skeleton-shimmer w-14 h-4" />
+          <div className="skeleton-shimmer w-20 h-4" />
         </div>
       </div>
-      <div className="mt-3 flex items-center gap-2">
-        {bounty.niche && (
-          <span
-            className="font-mono text-[10px] uppercase tracking-wider px-2 py-0.5"
-            style={{
-              background: isDark ? "rgba(255,255,255,0.05)" : "var(--accent-light)",
-              color: isDark ? "var(--text-muted)" : "var(--accent)",
-              borderRadius: isDark ? "1px" : "4px",
-            }}
-          >
-            {bounty.niche}
-          </span>
-        )}
-        {(() => {
-          const followerReq = extractFollowerReq(bounty.requirements);
-          return followerReq ? (
-            <span
-              className="font-mono text-[10px] uppercase tracking-wider px-2 py-0.5"
-              style={{
-                background: isDark ? "rgba(255,255,255,0.04)" : "rgba(45,41,38,0.06)",
-                color: "var(--text-muted)",
-                borderRadius: isDark ? "1px" : "4px",
-              }}
-            >
-              {followerReq} followers
-            </span>
-          ) : null;
-        })()}
-      </div>
-    </Link>
+
+      {/* Real content layer */}
+      {bounty && (
+        <div
+          className="absolute inset-0"
+          style={{
+            clipPath: revealed ? "inset(0 0% 0 0)" : "inset(0 100% 0 0)",
+            transition: "clip-path 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+          }}
+        >
+          <Link href={`/bounty/${bounty.id}`} className="block">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-2">
+                  <PlatformIcon platform={bounty.platform} />
+                  <Label>{bounty.platform}</Label>
+                  <span className="text-text-muted text-[11px]">·</span>
+                  <Label>{bounty.contentType}</Label>
+                </div>
+                <h3 className="text-text font-light text-base md:text-lg leading-snug hover:text-accent-mid transition-colors duration-200">
+                  {bounty.title}
+                </h3>
+                <p className="mt-1.5 text-text-muted text-sm font-light truncate">{bounty.company.companyName}</p>
+              </div>
+              <div className="text-right flex-shrink-0">
+                <p className="text-text font-light text-xl md:text-2xl">${bounty.budget.toLocaleString()}</p>
+                {bounty.payPerImpression && (
+                  <p className="font-mono text-[11px] text-accent-mid mt-0.5">
+                    + {bounty.payPerImpression} impressions
+                  </p>
+                )}
+                <div className="flex items-center gap-1 mt-1 justify-end">
+                  <Clock size={11} className="text-text-muted" />
+                  <span className="font-mono text-[11px] text-text-muted">
+                    {days}d left
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div className="mt-3 flex items-center gap-2">
+              {bounty.niche && (
+                <span
+                  className="font-mono text-[10px] uppercase tracking-wider px-2 py-0.5"
+                  style={{
+                    background: isDark ? "rgba(255,255,255,0.05)" : "var(--accent-light)",
+                    color: isDark ? "var(--text-muted)" : "var(--accent)",
+                    borderRadius: isDark ? "1px" : "4px",
+                  }}
+                >
+                  {bounty.niche}
+                </span>
+              )}
+              {(() => {
+                const followerReq = extractFollowerReq(bounty.requirements);
+                return followerReq ? (
+                  <span
+                    className="font-mono text-[10px] uppercase tracking-wider px-2 py-0.5"
+                    style={{
+                      background: isDark ? "rgba(255,255,255,0.04)" : "rgba(45,41,38,0.06)",
+                      color: "var(--text-muted)",
+                      borderRadius: isDark ? "1px" : "4px",
+                    }}
+                  >
+                    {followerReq} followers
+                  </span>
+                ) : null;
+              })()}
+            </div>
+          </Link>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -346,6 +406,8 @@ export default function Home() {
   const [platformFilter, setPlatformFilter] = useState("");
   const [nicheFilter, setNicheFilter] = useState("");
   const [payRange, setPayRange] = useState(0); // index into PAY_RANGES
+  const [followerFilter, setFollowerFilter] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     fetch("/api/bounties")
@@ -364,16 +426,27 @@ export default function Home() {
   const NICHES = ALL_NICHES;
 
   const filtered = useMemo(() => {
+    const q = searchQuery.toLowerCase().trim();
     return bounties.filter((b) => {
       if (platformFilter && b.platform !== platformFilter) return false;
       if (nicheFilter && b.niche !== nicheFilter) return false;
       const range = PAY_RANGES[payRange];
       if (b.budget < range.min || b.budget > range.max) return false;
+      if (followerFilter) {
+        const maxFollowers = parseInt(followerFilter);
+        const required = extractFollowerCount(b.requirements);
+        if (required > maxFollowers) return false;
+      }
+      if (q) {
+        const matchTitle = b.title.toLowerCase().includes(q);
+        const matchBrand = b.company.companyName.toLowerCase().includes(q);
+        if (!matchTitle && !matchBrand) return false;
+      }
       return true;
     });
-  }, [bounties, platformFilter, nicheFilter, payRange]);
+  }, [bounties, platformFilter, nicheFilter, payRange, followerFilter, searchQuery]);
 
-  const activeFilterCount = [platformFilter, nicheFilter, payRange > 0].filter(Boolean).length;
+  const activeFilterCount = [platformFilter, nicheFilter, payRange > 0, followerFilter].filter(Boolean).length;
 
   return (
     <>
@@ -456,8 +529,41 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Filters */}
+        {/* Search & Filters */}
         <section className="px-6 md:px-12 lg:px-24 pb-6">
+          {/* Search bar */}
+          <div className="mb-4">
+            <div
+              className="relative max-w-md"
+            >
+              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search bounties or brands..."
+                className="w-full pl-9 pr-4 font-light text-sm text-text placeholder:text-text-muted outline-none transition-all duration-200"
+                style={{
+                  background: "var(--surface)",
+                  border: "1px solid var(--border)",
+                  borderRadius: isDark ? "2px" : "8px",
+                  height: "40px",
+                  boxShadow: isDark ? "none" : "0 1px 3px rgba(45,41,38,0.04)",
+                }}
+                onFocus={(e) => (e.currentTarget.style.borderColor = "var(--border-strong)")}
+                onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border)")}
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text transition-colors cursor-pointer"
+                >
+                  <X size={13} />
+                </button>
+              )}
+            </div>
+          </div>
+
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-2 text-text-muted">
               <Filter size={14} />
@@ -486,12 +592,20 @@ export default function Home() {
               onChange={(v) => setPayRange(v ? parseInt(v) : 0)}
               isDark={isDark}
             />
+            <Dropdown
+              label="Followers"
+              options={FOLLOWER_RANGES.slice(1).map((f) => ({ label: f.label, value: f.value }))}
+              value={followerFilter}
+              onChange={setFollowerFilter}
+              isDark={isDark}
+            />
             {activeFilterCount > 0 && (
               <button
                 onClick={() => {
                   setPlatformFilter("");
                   setNicheFilter("");
                   setPayRange(0);
+                  setFollowerFilter("");
                 }}
                 className="font-mono text-[11px] uppercase tracking-wider text-accent-mid hover:text-accent transition-colors"
               >
@@ -506,9 +620,7 @@ export default function Home() {
 
         {/* Bounty Grid */}
         <section className="px-6 md:px-12 lg:px-24 pb-24">
-          {loading ? (
-            <BountyGridSkeleton isDark={isDark} />
-          ) : filtered.length === 0 ? (
+          {!loading && filtered.length === 0 ? (
             <div className="py-20 text-center">
               <p className="text-text-muted text-lg font-light">No bounties match your filters.</p>
               <button
@@ -516,6 +628,8 @@ export default function Home() {
                   setPlatformFilter("");
                   setNicheFilter("");
                   setPayRange(0);
+                  setFollowerFilter("");
+                  setSearchQuery("");
                 }}
                 className="mt-3 text-accent-mid text-sm hover:underline"
               >
@@ -524,8 +638,15 @@ export default function Home() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-5">
-              {filtered.map((bounty, i) => (
-                <BountyCard key={bounty.id} bounty={bounty} isDark={isDark} index={i} />
+              {(loading ? Array.from({ length: 6 }) : filtered).map((bounty, i) => (
+                <BountyCardShell key={loading ? `skeleton-${i}` : (bounty as Bounty).id} isDark={isDark}>
+                  <BountyCardContent
+                    bounty={loading ? undefined : (bounty as Bounty)}
+                    isDark={isDark}
+                    index={i}
+                    loaded={!loading}
+                  />
+                </BountyCardShell>
               ))}
             </div>
           )}

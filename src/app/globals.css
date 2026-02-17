@@ -201,6 +201,31 @@ body {
   clip-path: inset(0% 0% 0% 0%);
 }
 
+/* ---- Content reveal inside card (shimmer → data) ---- */
+.card-content-shimmer {
+  position: relative;
+}
+
+.card-content-shimmer .content-data {
+  clip-path: inset(0 100% 0 0);
+  transition: clip-path 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.card-content-shimmer .content-skeleton {
+  position: absolute;
+  inset: 0;
+  transition: opacity 0.3s ease;
+}
+
+.card-content-shimmer.revealed .content-data {
+  clip-path: inset(0 0% 0 0);
+}
+
+.card-content-shimmer.revealed .content-skeleton {
+  opacity: 0;
+  pointer-events: none;
+}
+
 /* ---- Detail page entry ---- */
 .detail-enter {
   opacity: 0;
