@@ -318,7 +318,7 @@ function Dropdown({
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-1.5 cursor-pointer font-mono text-[11px] uppercase tracking-wider px-3 transition-all duration-200 min-w-[160px] justify-between"
+        className="flex items-center gap-1.5 cursor-pointer font-mono text-[11px] uppercase tracking-wider px-3 transition-all duration-200 w-[160px] justify-between overflow-hidden"
         style={{
           background: "var(--surface)",
           color: value ? "var(--text)" : "var(--text-muted)",
@@ -328,7 +328,7 @@ function Dropdown({
           boxShadow: !isDark ? "0 1px 3px rgba(45,41,38,0.04)" : "none",
         }}
       >
-        <span>{selectedLabel || label}</span>
+        <span className="truncate">{selectedLabel || label}</span>
         <ChevronDown
           size={12}
           className="text-text-muted transition-transform duration-200"
