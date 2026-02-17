@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { DUMMY_BOUNTIES } from "@/data/bounties";
 
 export const dynamic = "force-dynamic";
@@ -31,6 +30,8 @@ export async function GET(req: Request) {
   const niche = searchParams.get("niche");
 
   try {
+    const { prisma } = await import("@/lib/prisma");
+
     const where: Record<string, unknown> = { status: "open" };
     if (platform) where.platform = platform;
     if (niche) where.niche = niche;
@@ -43,7 +44,6 @@ export async function GET(req: Request) {
       orderBy: { createdAt: "desc" },
     });
 
-    // If DB returned results, use them; otherwise fall back
     if (bounties.length > 0) {
       return NextResponse.json(bounties);
     }

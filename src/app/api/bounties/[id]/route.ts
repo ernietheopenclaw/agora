@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { DUMMY_BOUNTIES } from "@/data/bounties";
 
 export const dynamic = "force-dynamic";
@@ -31,6 +30,8 @@ export async function GET(
   const { id } = await params;
 
   try {
+    const { prisma } = await import("@/lib/prisma");
+
     const bounty = await prisma.bounty.findUnique({
       where: { id },
       include: {
@@ -42,7 +43,6 @@ export async function GET(
       return NextResponse.json(bounty);
     }
 
-    // Not found in DB — try fallback
     const fallback = findDummyBounty(id);
     if (fallback) {
       return NextResponse.json(fallback);
