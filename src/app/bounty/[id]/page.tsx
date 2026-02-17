@@ -20,6 +20,7 @@ import {
   Building2,
   FileText,
 } from "lucide-react";
+import { BountyDetailSkeleton } from "../../../components/Skeletons";
 
 interface BountyData {
   id: string;
@@ -129,6 +130,15 @@ export default function BountyDetail() {
       .catch(() => {});
   }, [bounty]);
 
+  const [contentVisible, setContentVisible] = useState(false);
+
+  useEffect(() => {
+    if (!loading && bounty) {
+      const timer = setTimeout(() => setContentVisible(true), 50);
+      return () => clearTimeout(timer);
+    }
+  }, [loading, bounty]);
+
   const requirementsList = bounty?.requirements?.split("\n").filter(Boolean) || [];
   // Strip [DUMMY] prefix from description for display
   const displayDescription = bounty?.description?.replace("[DUMMY] ", "") || "";
@@ -167,9 +177,12 @@ export default function BountyDetail() {
         </nav>
 
         {loading ? (
-          <section className="pt-32 pb-24 px-6 md:px-12 lg:px-24 text-center">
-            <p className="text-text-muted text-lg font-light">Loading...</p>
-          </section>
+          <>
+            <div className="pt-28 pb-2 px-6 md:px-12 lg:px-24">
+              <div className="skeleton-shimmer w-24 h-4 mb-4" />
+            </div>
+            <BountyDetailSkeleton isDark={isDark} />
+          </>
         ) : notFound || !bounty ? (
           <section className="pt-32 pb-24 px-6 md:px-12 lg:px-24 text-center">
             <h1 className="text-text font-extralight text-4xl md:text-5xl mb-4">Bounty not found</h1>
@@ -187,7 +200,7 @@ export default function BountyDetail() {
         ) : (
           <>
             {/* Back link */}
-            <div className="pt-24 pb-2 px-6 md:px-12 lg:px-24">
+            <div className={`pt-24 pb-2 px-6 md:px-12 lg:px-24 detail-enter ${contentVisible ? "detail-visible" : ""}`}>
               <Link
                 href="/"
                 className="inline-flex items-center gap-1.5 text-text-muted hover:text-text transition-colors text-sm font-light"
@@ -197,7 +210,7 @@ export default function BountyDetail() {
             </div>
 
             {/* Main content */}
-            <section className="px-6 md:px-12 lg:px-24 pb-16">
+            <section className={`px-6 md:px-12 lg:px-24 pb-16 detail-enter ${contentVisible ? "detail-visible" : ""}`} style={{ transitionDelay: "0.1s" }}>
               <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-8 lg:gap-12 items-start">
                 {/* Left column */}
                 <div>

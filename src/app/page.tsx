@@ -12,9 +12,10 @@ import {
   X,
   ChevronDown,
 } from "lucide-react";
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { AgoraLogo } from "../components/AgoraLogo";
+import { BountyGridSkeleton } from "../components/Skeletons";
 import { DUMMY_BOUNTIES } from "../data/bounties";
 
 function mapDummyToApiBounty(b: (typeof DUMMY_BOUNTIES)[number]) {
@@ -110,13 +111,24 @@ function daysUntil(dateStr: string): number {
   return Math.max(0, Math.ceil((target.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
 }
 
-function BountyCard({ bounty, isDark }: { bounty: Bounty; isDark: boolean }) {
+function BountyCard({ bounty, isDark, index = 0 }: { bounty: Bounty; isDark: boolean; index?: number }) {
   const days = daysUntil(bounty.deadline);
+  const cardRef = useRef<HTMLAnchorElement>(null);
+
+  useEffect(() => {
+    const el = cardRef.current;
+    if (!el) return;
+    const timer = setTimeout(() => {
+      el.classList.add("bounty-card-visible");
+    }, 60 * index + 30);
+    return () => clearTimeout(timer);
+  }, [index]);
 
   return (
     <Link
+      ref={cardRef}
       href={`/bounty/${bounty.id}`}
-      className="group block p-5 md:p-6 transition-all duration-200"
+      className="bounty-card-enter group block p-5 md:p-6 transition-all duration-200"
       style={{
         background: "var(--surface)",
         border: "1px solid var(--border)",
@@ -493,7 +505,9 @@ export default function Home() {
 
         {/* Bounty Grid */}
         <section className="px-6 md:px-12 lg:px-24 pb-24">
-          {filtered.length === 0 ? (
+          {loading ? (
+            <BountyGridSkeleton isDark={isDark} />
+          ) : filtered.length === 0 ? (
             <div className="py-20 text-center">
               <p className="text-text-muted text-lg font-light">No bounties match your filters.</p>
               <button
@@ -509,8 +523,8 @@ export default function Home() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-5">
-              {filtered.map((bounty) => (
-                <BountyCard key={bounty.id} bounty={bounty} isDark={isDark} />
+              {filtered.map((bounty, i) => (
+                <BountyCard key={bounty.id} bounty={bounty} isDark={isDark} index={i} />
               ))}
             </div>
           )}
