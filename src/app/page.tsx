@@ -3,6 +3,7 @@
 import { useTheme } from "./theme-provider";
 import { useSession } from "next-auth/react";
 import { CanvasBackdrop } from "./canvas-backdrop";
+import DrawBorderButton from "../components/DrawBorderButton";
 import {
   Sun,
   Moon,
@@ -551,13 +552,9 @@ export default function Home() {
                 >
                   Claim Your First Bounty <ArrowRight size={14} />
                 </a>
-                <a
-                  href="/signup"
-                  className="btn-outline-draw inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-sm border transition-all text-text-muted hover:text-text"
-                  style={{ borderColor: "var(--border-strong)" }}
-                >
+                <DrawBorderButton href="/signup">
                   I&apos;m a Brand
-                </a>
+                </DrawBorderButton>
               </div>
             </div>
           </section>
