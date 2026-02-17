@@ -680,12 +680,12 @@ export default function Home() {
 
   const filtered = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
-    return bounties.filter((b) => {
+    const results = bounties.filter((b) => {
       if (platformFilters.length > 0 && !platformFilters.includes(b.platform)) return false;
       if (nicheFilters.length > 0 && b.niche && !nicheFilters.includes(b.niche)) return false;
       if (nicheFilters.length > 0 && !b.niche) return false;
-      const range = PAY_RANGES[payRange];
-      if (b.budget < range.min || b.budget > range.max) return false;
+      if (payMin && b.budget < parseInt(payMin)) return false;
+      if (payMax && b.budget > parseInt(payMax)) return false;
       {
         const required = extractFollowerCount(b.requirements);
         if (followerMin && required < parseInt(followerMin)) return false;
@@ -698,9 +698,34 @@ export default function Home() {
       }
       return true;
     });
-  }, [bounties, platformFilters, nicheFilters, payRange, followerMin, followerMax, searchQuery]);
 
-  const activeFilterCount = [platformFilters.length > 0, nicheFilters.length > 0, payRange > 0, followerMin, followerMax].filter(Boolean).length;
+    // Sort
+    results.sort((a, b) => {
+      switch (sortBy) {
+        case "oldest":
+          return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
+        case "deadline-asc":
+          return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
+        case "deadline-desc":
+          return new Date(b.deadline).getTime() - new Date(a.deadline).getTime();
+        case "followers-asc":
+          return extractFollowerCount(a.requirements) - extractFollowerCount(b.requirements);
+        case "followers-desc":
+          return extractFollowerCount(b.requirements) - extractFollowerCount(a.requirements);
+        case "pay-asc":
+          return a.budget - b.budget;
+        case "pay-desc":
+          return b.budget - a.budget;
+        case "newest":
+        default:
+          return new Date(b.deadline).getTime() - new Date(a.deadline).getTime();
+      }
+    });
+
+    return results;
+  }, [bounties, platformFilters, nicheFilters, payMin, payMax, followerMin, followerMax, searchQuery, sortBy]);
+
+  const activeFilterCount = [platformFilters.length > 0, nicheFilters.length > 0, !!payMin || !!payMax, !!followerMin, !!followerMax].filter(Boolean).length;
 
   return (
     <>
@@ -755,7 +780,7 @@ export default function Home() {
               </span>
               {activeFilterCount > 0 && (
                 <button
-                  onClick={() => { setPlatformFilters([]); setNicheFilters([]); setPayRange(0); setFollowerMin(""); setFollowerMax(""); }}
+                  onClick={() => { setPlatformFilters([]); setNicheFilters([]); setPayMin(""); setPayMax(""); setFollowerMin(""); setFollowerMax(""); setSortBy("newest"); }}
                   className="font-mono text-[11px] uppercase tracking-wider text-accent-mid hover:text-accent transition-colors ml-auto"
                 >
                   Clear all
@@ -765,7 +790,13 @@ export default function Home() {
             <div className="grid grid-cols-2 gap-2">
               <MultiDropdown label="Platform" options={PLATFORMS.map((p) => ({ label: p, value: p }))} values={platformFilters} onChange={setPlatformFilters} isDark={isDark} />
               <MultiDropdown label="Niche" options={NICHES.map((n) => ({ label: n, value: n }))} values={nicheFilters} onChange={setNicheFilters} isDark={isDark} />
-              <Dropdown label="Pay Range" options={PAY_RANGES.slice(1).map((r, i) => ({ label: r.label, value: String(i + 1) }))} value={payRange > 0 ? String(payRange) : ""} onChange={(v) => setPayRange(v ? parseInt(v) : 0)} isDark={isDark} />
+              <Dropdown label="Sort" options={SORT_OPTIONS} value={sortBy} onChange={setSortBy} isDark={isDark} />
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Label>Budget</Label>
+              <PayStepper value={payMin} onChange={setPayMin} placeholder="Min $" isDark={isDark} />
+              <span className="text-text-muted text-[11px] font-mono">–</span>
+              <PayStepper value={payMax} onChange={setPayMax} placeholder="Max $" isDark={isDark} />
             </div>
             <div className="flex items-center gap-1.5">
               <Label>Followers</Label>
@@ -782,34 +813,48 @@ export default function Home() {
           </div>
 
           {/* Desktop: fixed CSS grid layout */}
-          <div className="hidden md:grid items-center gap-3" style={{ gridTemplateColumns: "auto 160px 160px 160px auto 1fr auto" }}>
-            <div className="flex items-center gap-2 text-text-muted">
-              <Filter size={14} />
-              <span className="font-mono text-[11px] uppercase tracking-wider whitespace-nowrap">
-                Filter{activeFilterCount > 0 && ` (${activeFilterCount})`}
-              </span>
-            </div>
-            <MultiDropdown label="Platform" options={PLATFORMS.map((p) => ({ label: p, value: p }))} values={platformFilters} onChange={setPlatformFilters} isDark={isDark} />
-            <MultiDropdown label="Niche" options={NICHES.map((n) => ({ label: n, value: n }))} values={nicheFilters} onChange={setNicheFilters} isDark={isDark} />
-            <Dropdown label="Pay Range" options={PAY_RANGES.slice(1).map((r, i) => ({ label: r.label, value: String(i + 1) }))} value={payRange > 0 ? String(payRange) : ""} onChange={(v) => setPayRange(v ? parseInt(v) : 0)} isDark={isDark} />
-            <div className="flex items-center gap-1.5">
-              <Label>Followers</Label>
-              <NumberStepper value={followerMin} onChange={setFollowerMin} placeholder="Min" isDark={isDark} />
-              <span className="text-text-muted text-[11px] font-mono">–</span>
-              <NumberStepper value={followerMax} onChange={setFollowerMax} placeholder="Max" isDark={isDark} />
-            </div>
-            <div className="relative">
-              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" />
-              <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search bounties or brands..." className="w-full pl-9 pr-4 font-light text-sm text-text placeholder:text-text-muted outline-none transition-all duration-200" style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: isDark ? "2px" : "8px", height: "36px", boxShadow: isDark ? "none" : "0 1px 3px rgba(45,41,38,0.04)" }} onFocus={(e) => (e.currentTarget.style.borderColor = "var(--border-strong)")} onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border)")} />
-              {searchQuery && (<button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text transition-colors cursor-pointer"><X size={13} /></button>)}
-            </div>
-            <div className="flex items-center gap-3">
-              {activeFilterCount > 0 && (
-                <button onClick={() => { setPlatformFilters([]); setNicheFilters([]); setPayRange(0); setFollowerMin(""); setFollowerMax(""); }} className="font-mono text-[11px] uppercase tracking-wider text-accent-mid hover:text-accent transition-colors whitespace-nowrap">
-                  Clear all
-                </button>
-              )}
-              <span className="font-mono text-[11px] text-text-muted whitespace-nowrap">{filtered.length} bounties</span>
+          <div className="hidden md:block">
+            <div className="flex items-center gap-3 flex-wrap">
+              <div className="flex items-center gap-2 text-text-muted">
+                <Filter size={14} />
+                <span className="font-mono text-[11px] uppercase tracking-wider whitespace-nowrap">
+                  Filter{activeFilterCount > 0 && ` (${activeFilterCount})`}
+                </span>
+              </div>
+              <div style={{ width: "160px" }}>
+                <MultiDropdown label="Platform" options={PLATFORMS.map((p) => ({ label: p, value: p }))} values={platformFilters} onChange={setPlatformFilters} isDark={isDark} />
+              </div>
+              <div style={{ width: "160px" }}>
+                <MultiDropdown label="Niche" options={NICHES.map((n) => ({ label: n, value: n }))} values={nicheFilters} onChange={setNicheFilters} isDark={isDark} />
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Label>Budget</Label>
+                <PayStepper value={payMin} onChange={setPayMin} placeholder="Min $" isDark={isDark} />
+                <span className="text-text-muted text-[11px] font-mono">–</span>
+                <PayStepper value={payMax} onChange={setPayMax} placeholder="Max $" isDark={isDark} />
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Label>Followers</Label>
+                <NumberStepper value={followerMin} onChange={setFollowerMin} placeholder="Min" isDark={isDark} />
+                <span className="text-text-muted text-[11px] font-mono">–</span>
+                <NumberStepper value={followerMax} onChange={setFollowerMax} placeholder="Max" isDark={isDark} />
+              </div>
+              <div style={{ width: "200px" }}>
+                <Dropdown label="Sort" options={SORT_OPTIONS} value={sortBy} onChange={setSortBy} isDark={isDark} />
+              </div>
+              <div className="flex-1 relative" style={{ minWidth: "180px" }}>
+                <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" />
+                <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search bounties or brands..." className="w-full pl-9 pr-4 font-light text-sm text-text placeholder:text-text-muted outline-none transition-all duration-200" style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: isDark ? "2px" : "8px", height: "36px", boxShadow: isDark ? "none" : "0 1px 3px rgba(45,41,38,0.04)" }} onFocus={(e) => (e.currentTarget.style.borderColor = "var(--border-strong)")} onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border)")} />
+                {searchQuery && (<button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text transition-colors cursor-pointer"><X size={13} /></button>)}
+              </div>
+              <div className="flex items-center gap-3">
+                {activeFilterCount > 0 && (
+                  <button onClick={() => { setPlatformFilters([]); setNicheFilters([]); setPayMin(""); setPayMax(""); setFollowerMin(""); setFollowerMax(""); setSortBy("newest"); }} className="font-mono text-[11px] uppercase tracking-wider text-accent-mid hover:text-accent transition-colors whitespace-nowrap">
+                    Clear all
+                  </button>
+                )}
+                <span className="font-mono text-[11px] text-text-muted whitespace-nowrap">{filtered.length} bounties</span>
+              </div>
             </div>
           </div>
         </section>
@@ -823,10 +868,12 @@ export default function Home() {
                 onClick={() => {
                   setPlatformFilters([]);
                   setNicheFilters([]);
-                  setPayRange(0);
+                  setPayMin("");
+                  setPayMax("");
                   setFollowerMin("");
                   setFollowerMax("");
                   setSearchQuery("");
+                  setSortBy("newest");
                 }}
                 className="mt-3 text-accent-mid text-sm hover:underline"
               >

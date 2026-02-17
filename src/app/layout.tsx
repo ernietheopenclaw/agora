@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { ThemeProvider } from "./theme-provider";
 import { AuthSessionProvider } from "./session-provider";
+import { Footer } from "../components/Footer";
 
 export const metadata: Metadata = {
   title: "Agora — Bounties for Creators",
@@ -18,9 +19,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body>
+      <body className="min-h-screen flex flex-col">
         <AuthSessionProvider>
-          <ThemeProvider>{children}</ThemeProvider>
+          <ThemeProvider>
+            <main className="flex-1">{children}</main>
+            <Footer />
+          </ThemeProvider>
         </AuthSessionProvider>
       </body>
     </html>
