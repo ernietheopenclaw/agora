@@ -811,19 +811,19 @@ export default function Home() {
             <span className="font-mono text-[11px] text-text-muted">{filtered.length} bounties</span>
           </div>
 
-          {/* Desktop: fixed CSS grid layout */}
+          {/* Desktop: fixed CSS grid layout — NO flex-wrap, columns are fixed width */}
           <div className="hidden md:block">
-            <div className="flex items-center gap-3 flex-wrap">
+            <div className="grid gap-3 items-center" style={{ gridTemplateColumns: "auto 160px 160px auto auto 200px 1fr auto" }}>
               <div className="flex items-center gap-2 text-text-muted">
                 <Filter size={14} />
                 <span className="font-mono text-[11px] uppercase tracking-wider whitespace-nowrap">
                   Filter{activeFilterCount > 0 && ` (${activeFilterCount})`}
                 </span>
               </div>
-              <div style={{ width: "160px" }}>
+              <div className="w-full">
                 <MultiDropdown label="Platform" options={PLATFORMS.map((p) => ({ label: p, value: p }))} values={platformFilters} onChange={setPlatformFilters} isDark={isDark} />
               </div>
-              <div style={{ width: "160px" }}>
+              <div className="w-full">
                 <MultiDropdown label="Niche" options={NICHES.map((n) => ({ label: n, value: n }))} values={nicheFilters} onChange={setNicheFilters} isDark={isDark} />
               </div>
               <div className="flex items-center gap-1.5">
@@ -838,10 +838,10 @@ export default function Home() {
                 <span className="text-text-muted text-[11px] font-mono">–</span>
                 <NumberStepper value={followerMax} onChange={setFollowerMax} placeholder="Max" isDark={isDark} />
               </div>
-              <div style={{ width: "200px" }}>
+              <div className="w-full">
                 <Dropdown label="Sort" options={SORT_OPTIONS} value={sortBy} onChange={setSortBy} isDark={isDark} />
               </div>
-              <div className="flex-1 relative" style={{ minWidth: "180px" }}>
+              <div className="relative w-full" style={{ minWidth: "180px" }}>
                 <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" />
                 <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search bounties or brands..." className="w-full pl-9 pr-4 font-light text-sm text-text placeholder:text-text-muted outline-none transition-all duration-200" style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: isDark ? "2px" : "8px", height: "36px", boxShadow: isDark ? "none" : "0 1px 3px rgba(45,41,38,0.04)" }} onFocus={(e) => (e.currentTarget.style.borderColor = "var(--border-strong)")} onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border)")} />
                 {searchQuery && (<button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text transition-colors cursor-pointer"><X size={13} /></button>)}
