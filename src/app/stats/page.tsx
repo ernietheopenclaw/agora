@@ -842,9 +842,11 @@ export default function DashboardPage() {
             <span className="font-mono text-[11px] uppercase tracking-[0.15em] text-text-muted">
               {isCreator ? "Creator Dashboard" : "Campaign Overview"}
             </span>
-            <h1 className="mt-2 text-text font-extralight" style={{ fontSize: "clamp(1.5rem, 3vw, 2.25rem)" }}>
-              {isCreator ? "Earnings & Activity" : "Spending & Performance"}
-            </h1>
+            {!isCreator && (
+              <h1 className="mt-2 text-text font-extralight" style={{ fontSize: "clamp(1.5rem, 3vw, 2.25rem)" }}>
+                Spending &amp; Performance
+              </h1>
+            )}
           </div>
 
           {loading ? (

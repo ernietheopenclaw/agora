@@ -2,7 +2,7 @@
 
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useTheme } from "../theme-provider";
 import { Navbar } from "../../components/Navbar";
 import { CanvasBackdrop } from "../canvas-backdrop";
@@ -52,8 +52,8 @@ const CheckIcon = ({ size = 14 }: { size?: number }) => (
   </svg>
 );
 
-const PlusIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" width={16} height={16}>
+const PlusIcon = ({ size = 16 }: { size?: number }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" width={size} height={size}>
     <line x1="12" y1="5" x2="12" y2="19" />
     <line x1="5" y1="12" x2="19" y2="12" />
   </svg>
@@ -77,6 +77,12 @@ const TrashIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" width={12} height={12}>
     <polyline points="3 6 5 6 21 6" />
     <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+  </svg>
+);
+
+const PencilIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" width={14} height={14}>
+    <path d="M17 3a2.828 2.828 0 114 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
   </svg>
 );
 
@@ -110,6 +116,7 @@ interface ProfileData {
   instagramHandle: string;
   youtubeHandle: string;
   xHandle: string;
+  avatar: string;
 }
 
 type LinkStep = "pick" | "handle" | "verify" | "done";
@@ -123,6 +130,8 @@ function generateCode(): string {
   return code;
 }
 
+const MAX_AVATAR_SIZE = 2 * 1024 * 1024; // 2MB
+
 /* ── Component ────────────────────────────────────────────── */
 
 export default function ProfilePage() {
@@ -133,7 +142,6 @@ export default function ProfilePage() {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
   const [data, setData] = useState<ProfileData | null>(null);
   const [displayName, setDisplayName] = useState("");
   const [bio, setBio] = useState("");
@@ -143,6 +151,17 @@ export default function ProfilePage() {
     youtubeHandle: "",
     xHandle: "",
   });
+
+  // Edit mode
+  const [editing, setEditing] = useState(false);
+  const [editDisplayName, setEditDisplayName] = useState("");
+  const [editBio, setEditBio] = useState("");
+
+  // Avatar
+  const [avatar, setAvatar] = useState<string>("");
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarError, setAvatarError] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Link flow state
   const [showLinkModal, setShowLinkModal] = useState(false);
@@ -164,6 +183,7 @@ export default function ProfilePage() {
           setData(d);
           setDisplayName(d.displayName);
           setBio(d.bio || "");
+          setAvatar(d.avatar || "");
           setHandles({
             tiktokHandle: d.tiktokHandle || "",
             instagramHandle: d.instagramHandle || "",
@@ -176,23 +196,95 @@ export default function ProfilePage() {
     }
   }, [status]);
 
-  const handleSave = async () => {
+  /* ── Edit mode handlers ──────────────────────────────────── */
+
+  const startEditing = () => {
+    setEditDisplayName(displayName);
+    setEditBio(bio);
+    setEditing(true);
+  };
+
+  const cancelEditing = () => {
+    setEditing(false);
+  };
+
+  const saveEditing = async () => {
     setSaving(true);
-    setSaved(false);
     try {
       const res = await fetch("/api/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ displayName, bio, ...handles }),
+        body: JSON.stringify({ displayName: editDisplayName, bio: editBio, ...handles }),
       });
       if (res.ok) {
-        setSaved(true);
-        setTimeout(() => setSaved(false), 3000);
+        setDisplayName(editDisplayName);
+        setBio(editBio);
+        setEditing(false);
       }
     } finally {
       setSaving(false);
     }
   };
+
+  /* ── Avatar upload ───────────────────────────────────────── */
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setAvatarError("");
+
+    if (file.size > MAX_AVATAR_SIZE) {
+      setAvatarError("Image must be under 2MB");
+      e.target.value = "";
+      return;
+    }
+
+    if (!file.type.startsWith("image/")) {
+      setAvatarError("Please select an image file");
+      e.target.value = "";
+      return;
+    }
+
+    // Show preview immediately
+    const previewUrl = URL.createObjectURL(file);
+    setAvatar(previewUrl);
+
+    // Convert to base64
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const base64 = reader.result as string;
+      setAvatarUploading(true);
+      try {
+        const res = await fetch("/api/profile/avatar", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ avatar: base64 }),
+        });
+        if (res.ok) {
+          setAvatar(base64);
+        } else {
+          const err = await res.json();
+          setAvatarError(err.error || "Upload failed");
+          setAvatar(data?.avatar || "");
+        }
+      } catch {
+        setAvatarError("Upload failed");
+        setAvatar(data?.avatar || "");
+      } finally {
+        setAvatarUploading(false);
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
+
+  /* ── Link flow handlers ──────────────────────────────────── */
 
   const openLinkModal = useCallback(() => {
     setShowLinkModal(true);
@@ -221,22 +313,18 @@ export default function ProfilePage() {
     if (!linkPlatform) return;
     setVerifying(true);
 
-    // Call verify API
     await fetch("/api/profile/verify-social", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ platform: linkPlatform.name, handle: linkHandle }),
     });
 
-    // Fake 2-second checking animation
     await new Promise((r) => setTimeout(r, 2000));
 
-    // Update local state
     const cleanHandle = linkHandle.startsWith("@") ? linkHandle : `@${linkHandle}`;
     const newHandles = { ...handles, [linkPlatform.key]: cleanHandle };
     setHandles(newHandles);
 
-    // Save to DB
     await fetch("/api/settings", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -245,8 +333,6 @@ export default function ProfilePage() {
 
     setVerifying(false);
     setLinkStep("done");
-
-    // Auto-close after showing success
     setTimeout(() => closeLinkModal(), 1500);
   };
 
@@ -319,26 +405,73 @@ export default function ProfilePage() {
           <div className="max-w-2xl mx-auto">
             <h1 className="text-text font-extralight text-3xl mb-8">Profile</h1>
 
+            {/* Hidden file input for avatar */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleAvatarChange}
+              style={{ display: "none" }}
+            />
+
             {/* ── Profile Card ─────────────────────────────── */}
-            <div className="p-6 md:p-8 mb-5" style={cardStyle}>
+            <div className="p-6 md:p-8" style={cardStyle}>
+              {/* Edit button top-right */}
+              {!editing && (
+                <div className="flex justify-end mb-2 -mt-1">
+                  <button
+                    onClick={startEditing}
+                    className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 cursor-pointer transition-colors"
+                    style={{
+                      color: "var(--text-muted)",
+                      background: "transparent",
+                      border: "1px solid var(--border)",
+                      borderRadius: isDark ? "2px" : "6px",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = "var(--border-strong)";
+                      e.currentTarget.style.color = "var(--text)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = "var(--border)";
+                      e.currentTarget.style.color = "var(--text-muted)";
+                    }}
+                  >
+                    <PencilIcon />
+                    Edit
+                  </button>
+                </div>
+              )}
+
               {/* Avatar + Name + Email + Badges */}
               <div className="flex items-start gap-5 mb-6">
                 {/* Avatar */}
                 <div className="relative flex-shrink-0">
                   <div
-                    className="flex items-center justify-center text-2xl font-light text-white"
+                    onClick={handleAvatarClick}
+                    className="flex items-center justify-center text-2xl font-light text-white cursor-pointer overflow-hidden"
                     style={{
                       width: 80,
                       height: 80,
                       borderRadius: "50%",
-                      background: "var(--accent, #5aaca7)",
+                      background: avatar ? "transparent" : "var(--accent, #5aaca7)",
                     }}
                   >
-                    {initial}
+                    {avatar ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={avatar}
+                        alt="Avatar"
+                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                      />
+                    ) : (
+                      initial
+                    )}
                   </div>
-                  {/* Camera overlay (placeholder) */}
+                  {/* Camera overlay */}
                   <div
-                    className="absolute bottom-0 right-0 flex items-center justify-center cursor-pointer"
+                    onClick={handleAvatarClick}
+                    className="absolute bottom-0 right-0 flex items-center justify-center cursor-pointer transition-colors"
                     style={{
                       width: 28,
                       height: 28,
@@ -347,10 +480,15 @@ export default function ProfilePage() {
                       border: "2px solid var(--border-strong)",
                       color: "var(--text-muted)",
                     }}
-                    title="Upload photo (coming soon)"
+                    title="Upload photo"
                   >
-                    <CameraIcon />
+                    {avatarUploading ? <SpinnerIcon /> : <CameraIcon />}
                   </div>
+                  {avatarError && (
+                    <p className="absolute -bottom-5 left-0 text-xs whitespace-nowrap" style={{ color: "#e29578" }}>
+                      {avatarError}
+                    </p>
+                  )}
                 </div>
 
                 {/* Name / Email / Badges */}
@@ -370,120 +508,163 @@ export default function ProfilePage() {
                   </div>
                   <p className="text-text-muted text-sm font-light mb-3">{data.email}</p>
 
-                  {/* Connected account badges */}
-                  {connectedAccounts.length > 0 ? (
-                    <div className="flex flex-wrap gap-2">
-                      {connectedAccounts.map((p) => (
-                        <span
-                          key={p.key}
-                          className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 group"
-                          style={{
-                            background: `${p.color}18`,
-                            color: p.color,
-                            borderRadius: isDark ? "2px" : "999px",
-                            border: `1px solid ${p.color}30`,
-                          }}
+                  {/* Connected account badges + link button */}
+                  <div className="flex flex-wrap items-center gap-2">
+                    {connectedAccounts.map((p) => (
+                      <span
+                        key={p.key}
+                        className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 group"
+                        style={{
+                          background: `${p.color}18`,
+                          color: p.color,
+                          borderRadius: isDark ? "2px" : "999px",
+                          border: `1px solid ${p.color}30`,
+                        }}
+                      >
+                        {p.icon}
+                        <span>{handles[p.key]}</span>
+                        <button
+                          onClick={() => handleRemoveAccount(p.key)}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity ml-0.5 cursor-pointer"
+                          style={{ color: p.color }}
+                          title={`Remove ${p.name}`}
                         >
-                          {p.icon}
-                          <span>{handles[p.key]}</span>
-                          <button
-                            onClick={() => handleRemoveAccount(p.key)}
-                            className="opacity-0 group-hover:opacity-100 transition-opacity ml-0.5 cursor-pointer"
-                            style={{ color: p.color }}
-                            title={`Remove ${p.name}`}
-                          >
-                            <TrashIcon />
-                          </button>
-                        </span>
-                      ))}
+                          <TrashIcon />
+                        </button>
+                      </span>
+                    ))}
+                    {unlinkedPlatforms.length > 0 && (
+                      connectedAccounts.length > 0 ? (
+                        <button
+                          onClick={openLinkModal}
+                          className="inline-flex items-center gap-1 text-xs font-medium px-2 py-1 cursor-pointer transition-colors"
+                          style={{
+                            color: "var(--text-muted)",
+                            background: "transparent",
+                            border: "1px dashed var(--border)",
+                            borderRadius: isDark ? "2px" : "999px",
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.borderColor = "var(--border-strong)";
+                            e.currentTarget.style.color = "var(--text)";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.borderColor = "var(--border)";
+                            e.currentTarget.style.color = "var(--text-muted)";
+                          }}
+                          title="Link More Accounts"
+                        >
+                          <PlusIcon size={12} />
+                          Link More
+                        </button>
+                      ) : (
+                        <button
+                          onClick={openLinkModal}
+                          className="inline-flex items-center gap-1.5 text-xs font-medium cursor-pointer transition-colors"
+                          style={{ color: "var(--text-muted)", background: "transparent", border: "none" }}
+                          onMouseEnter={(e) => (e.currentTarget.style.color = "var(--text)")}
+                          onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-muted)")}
+                        >
+                          <PlusIcon size={12} />
+                          Link More Accounts
+                        </button>
+                      )
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* ── View / Edit mode for fields ─────────────── */}
+              {editing ? (
+                <>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-mono uppercase tracking-wider text-text-muted mb-2">
+                        Display Name
+                      </label>
+                      <input
+                        type="text"
+                        value={editDisplayName}
+                        onChange={(e) => setEditDisplayName(e.target.value)}
+                        style={inputStyle}
+                        onFocus={(e) => (e.target.style.borderColor = "var(--border-strong)")}
+                        onBlur={(e) => (e.target.style.borderColor = "var(--border)")}
+                      />
                     </div>
-                  ) : (
-                    <p className="text-text-muted text-xs font-light italic">No accounts linked</p>
+                    <div>
+                      <label className="block text-xs font-mono uppercase tracking-wider text-text-muted mb-2">
+                        Bio
+                      </label>
+                      <textarea
+                        value={editBio}
+                        onChange={(e) => setEditBio(e.target.value)}
+                        rows={3}
+                        placeholder="Tell brands about yourself..."
+                        style={{ ...inputStyle, resize: "vertical", minHeight: "80px" }}
+                        onFocus={(e) => (e.target.style.borderColor = "var(--border-strong)")}
+                        onBlur={(e) => (e.target.style.borderColor = "var(--border)")}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 mt-6">
+                    <button
+                      onClick={saveEditing}
+                      disabled={saving}
+                      className="px-6 py-2.5 text-sm font-medium transition-all cursor-pointer flex items-center gap-2"
+                      style={{
+                        background: "var(--accent, #5aaca7)",
+                        color: "#fff",
+                        borderRadius: isDark ? "2px" : "8px",
+                        opacity: saving ? 0.7 : 1,
+                        border: "none",
+                      }}
+                    >
+                      {saving && <SpinnerIcon />}
+                      {saving ? "Saving..." : "Save"}
+                    </button>
+                    <button
+                      onClick={cancelEditing}
+                      className="px-5 py-2.5 text-sm font-medium cursor-pointer transition-colors"
+                      style={{
+                        background: "transparent",
+                        color: "var(--text-muted)",
+                        border: "1px solid var(--border)",
+                        borderRadius: isDark ? "2px" : "8px",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.borderColor = "var(--border-strong)";
+                        e.currentTarget.style.color = "var(--text)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.borderColor = "var(--border)";
+                        e.currentTarget.style.color = "var(--text-muted)";
+                      }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div className="space-y-4">
+                  {displayName && (
+                    <div>
+                      <label className="block text-xs font-mono uppercase tracking-wider text-text-muted mb-1">
+                        Display Name
+                      </label>
+                      <p className="text-text text-sm font-light">{displayName}</p>
+                    </div>
                   )}
+                  <div>
+                    <label className="block text-xs font-mono uppercase tracking-wider text-text-muted mb-1">
+                      Bio
+                    </label>
+                    <p className="text-text text-sm font-light" style={{ whiteSpace: "pre-wrap" }}>
+                      {bio || <span className="text-text-muted italic">No bio yet</span>}
+                    </p>
+                  </div>
                 </div>
-              </div>
-
-              {/* Editable fields */}
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-xs font-mono uppercase tracking-wider text-text-muted mb-2">
-                    Display Name
-                  </label>
-                  <input
-                    type="text"
-                    value={displayName}
-                    onChange={(e) => setDisplayName(e.target.value)}
-                    style={inputStyle}
-                    onFocus={(e) => (e.target.style.borderColor = "var(--border-strong)")}
-                    onBlur={(e) => (e.target.style.borderColor = "var(--border)")}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-mono uppercase tracking-wider text-text-muted mb-2">
-                    Bio
-                  </label>
-                  <textarea
-                    value={bio}
-                    onChange={(e) => setBio(e.target.value)}
-                    rows={3}
-                    placeholder="Tell brands about yourself..."
-                    style={{ ...inputStyle, resize: "vertical", minHeight: "80px" }}
-                    onFocus={(e) => (e.target.style.borderColor = "var(--border-strong)")}
-                    onBlur={(e) => (e.target.style.borderColor = "var(--border)")}
-                  />
-                </div>
-              </div>
-
-              {/* Save */}
-              <div className="flex items-center gap-3 mt-6">
-                <button
-                  onClick={handleSave}
-                  disabled={saving}
-                  className="px-6 py-2.5 text-sm font-medium transition-all cursor-pointer flex items-center gap-2"
-                  style={{
-                    background: "var(--accent, #5aaca7)",
-                    color: "#fff",
-                    borderRadius: isDark ? "2px" : "8px",
-                    opacity: saving ? 0.7 : 1,
-                    border: "none",
-                  }}
-                >
-                  {saving ? <SpinnerIcon /> : saved ? <CheckIcon /> : null}
-                  {saving ? "Saving..." : saved ? "Saved!" : "Save Changes"}
-                </button>
-                {saved && (
-                  <span className="text-sm text-text-muted font-light">All changes saved</span>
-                )}
-              </div>
+              )}
             </div>
-
-            {/* ── Link Account Section ─────────────────────── */}
-            {unlinkedPlatforms.length > 0 && (
-              <div className="mt-2">
-                <button
-                  onClick={openLinkModal}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium transition-all cursor-pointer"
-                  style={{
-                    background: isDark ? "rgba(255,255,255,0.05)" : "var(--surface)",
-                    color: "var(--text)",
-                    border: "1px solid var(--border)",
-                    borderRadius: isDark ? "2px" : "8px",
-                    boxShadow: isDark ? "none" : "0 1px 3px rgba(45,41,38,0.04)",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = "var(--border-strong)";
-                    e.currentTarget.style.background = isDark ? "rgba(255,255,255,0.08)" : "var(--surface-raised, #e8e4df)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = "var(--border)";
-                    e.currentTarget.style.background = isDark ? "rgba(255,255,255,0.05)" : "var(--surface)";
-                  }}
-                >
-                  <PlusIcon />
-                  Connect a Platform
-                </button>
-              </div>
-            )}
           </div>
         </div>
 
@@ -506,7 +687,7 @@ export default function ProfilePage() {
               {/* Modal header */}
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-text font-light text-lg">
-                  {linkStep === "pick" && "Connect a Platform"}
+                  {linkStep === "pick" && "Link More Accounts"}
                   {linkStep === "handle" && `Link ${linkPlatform?.name}`}
                   {linkStep === "verify" && "Verify Ownership"}
                   {linkStep === "done" && "Connected!"}
@@ -611,8 +792,6 @@ export default function ProfilePage() {
                   <p className="text-text text-sm font-light mb-4 leading-relaxed">
                     Add this code to your <strong style={{ color: linkPlatform.color }}>{linkPlatform.name}</strong> bio, then click Verify.
                   </p>
-
-                  {/* Code display */}
                   <div
                     className="flex items-center justify-between px-4 py-3 mb-5"
                     style={{
@@ -638,11 +817,9 @@ export default function ProfilePage() {
                       <CopyIcon />
                     </button>
                   </div>
-
                   <p className="text-text-muted text-xs mb-5">
                     Linking <strong>@{linkHandle.replace(/^@/, "")}</strong> on {linkPlatform.name}
                   </p>
-
                   <button
                     onClick={handleVerify}
                     disabled={verifying}

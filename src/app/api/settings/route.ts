@@ -32,6 +32,7 @@ export async function GET() {
     instagramHandle: user.creatorProfile?.instagramHandle || "",
     youtubeHandle: user.creatorProfile?.youtubeHandle || "",
     xHandle: user.creatorProfile?.xHandle || "",
+    avatar: user.creatorProfile?.avatar || "",
     hasCreatorProfile: !!user.creatorProfile,
   });
 }
