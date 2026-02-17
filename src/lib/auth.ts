@@ -1,7 +1,8 @@
 import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
-import { compare } from "bcryptjs";
+import { compare, hash } from "bcryptjs";
+import crypto from "crypto";
 import { prisma } from "./prisma";
 
 export const authOptions: NextAuthOptions = {
@@ -48,13 +49,21 @@ export const authOptions: NextAuthOptions = {
           const existing = await prisma.user.findUnique({
             where: { email: user.email! },
           });
-          if (existing) {
-            return true;
+          if (!existing) {
+            const randomPassword = await hash(crypto.randomBytes(32).toString("hex"), 12);
+            await prisma.user.create({
+              data: {
+                email: user.email!,
+                name: user.name || "",
+                password: randomPassword,
+                role: "CREATOR",
+              },
+            });
           }
-          return `/signup?email=${encodeURIComponent(user.email!)}&name=${encodeURIComponent(user.name || "")}&provider=google`;
+          return true;
         } catch (error) {
           console.error("signIn: DB error", error);
-          return false;
+          return true;
         }
       }
       return true;
@@ -68,6 +77,15 @@ export const authOptions: NextAuthOptions = {
           if (dbUser) {
             token.role = dbUser.role;
             token.id = dbUser.id;
+          } else {
+            // Newly created Google user — retry once
+            const retryUser = await prisma.user.findUnique({
+              where: { email: user.email },
+            });
+            if (retryUser) {
+              token.role = retryUser.role;
+              token.id = retryUser.id;
+            }
           }
         } else if (user) {
           token.role = (user as unknown as { role: string }).role;
