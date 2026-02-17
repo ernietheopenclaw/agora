@@ -68,44 +68,65 @@ body {
   font-family: 'JetBrains Mono', monospace;
 }
 
-/* Global button hover effects per DESIGN.md */
-button,
-a[style*="background: var(--accent)"],
-a[class*="rounded-sm"][style*="background"],
-[role="button"] {
-  transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+/* ---- Animated gradient for CTA buttons ---- */
+@keyframes gradient-party {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
-/* Primary accent buttons — shadow lift + slight translate */
-button[style*="background: var(--accent)"]:hover:not(:disabled),
-a[style*="background: var(--accent)"]:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(33, 131, 128, 0.3);
+.cta-party {
+  background: var(--accent);
+  background-size: 100% 100%;
+  transition: background-size 0.3s ease, box-shadow 0.3s ease;
 }
 
-button[style*="background: var(--accent)"]:active:not(:disabled),
-a[style*="background: var(--accent)"]:active {
-  transform: translateY(0);
-  box-shadow: 0 1px 4px rgba(33, 131, 128, 0.2);
+.cta-party:hover {
+  background: linear-gradient(135deg, #218380, #5aaca7, #218380, #1a6b68, #5aaca7);
+  background-size: 300% 300%;
+  animation: gradient-party 2s ease infinite;
+  box-shadow: 0 0 20px rgba(33, 131, 128, 0.35);
 }
 
-/* Surface/secondary buttons — dark mode: bg-white/5, light mode: shadow lift */
-:root button[style*="background: var(--surface)"]:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.08) !important;
+/* ---- Border draw effect for outline buttons ---- */
+.btn-outline-draw {
+  position: relative;
+  transition: color 0.3s ease;
 }
 
-[data-theme="light"] button[style*="background: var(--surface)"]:hover:not(:disabled) {
-  box-shadow: 0 2px 8px rgba(45, 41, 38, 0.08);
-  background: var(--surface-raised, #e8e4df) !important;
+.btn-outline-draw::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border: 2px solid var(--accent-mid);
+  border-radius: inherit;
+  opacity: 0;
+  clip-path: inset(0 100% 0 0);
+  transition: clip-path 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.2s ease;
+  pointer-events: none;
 }
 
-/* Border-only buttons — subtle lift */
-a[style*="borderColor"]:hover,
-button[style*="borderColor"]:hover:not(:disabled) {
-  transform: translateY(-1px);
+.btn-outline-draw:hover::after {
+  opacity: 1;
+  clip-path: inset(0 0 0 0);
 }
 
-a[style*="borderColor"]:active,
-button[style*="borderColor"]:active:not(:disabled) {
-  transform: translateY(0);
+/* ---- Login underline slide ---- */
+.login-underline {
+  position: relative;
+}
+
+.login-underline::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: var(--text);
+  transition: width 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.login-underline:hover::after {
+  width: 100%;
 }

@@ -75,18 +75,33 @@ function Label({ children }: { children: React.ReactNode }) {
 }
 
 function PlatformIcon({ platform }: { platform: string }) {
-  const colors: Record<string, string> = {
-    TikTok: "#ff2d55",
-    Instagram: "#c13584",
-    YouTube: "#ff0000",
-    "Twitter/X": "var(--text)",
+  const size = 14;
+  const icons: Record<string, React.ReactNode> = {
+    TikTok: (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="#ff2d55" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5" />
+      </svg>
+    ),
+    Instagram: (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="#c13584" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="2" y="2" width="20" height="20" rx="5" />
+        <circle cx="12" cy="12" r="5" />
+        <circle cx="17.5" cy="6.5" r="1.5" fill="#c13584" stroke="none" />
+      </svg>
+    ),
+    YouTube: (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="#ff0000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="2" y="4" width="20" height="16" rx="4" />
+        <polygon points="10,8 16,12 10,16" fill="#ff0000" stroke="none" />
+      </svg>
+    ),
+    "Twitter/X": (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M4 4l16 16M20 4L4 20" />
+      </svg>
+    ),
   };
-  return (
-    <span
-      className="inline-block w-2 h-2 rounded-full flex-shrink-0"
-      style={{ background: colors[platform] || "var(--accent-mid)" }}
-    />
-  );
+  return <span className="flex-shrink-0 flex items-center">{icons[platform] || <span className="inline-block w-2 h-2 rounded-full" style={{ background: "var(--accent-mid)" }} />}</span>;
 }
 
 function daysUntil(dateStr: string): number {
@@ -367,20 +382,20 @@ export default function Home() {
           <div className="flex items-center gap-3">
             <a
               href="/login"
-              className="text-sm text-text-muted hover:text-text transition-colors"
+              className="text-sm text-text-muted hover:text-text transition-colors login-underline"
             >
               Log in
             </a>
             <a
               href="/signup/creator"
-              className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-sm transition-all"
-              style={{ background: "var(--accent)", color: "#fff" }}
+              className="cta-party hidden sm:inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-sm transition-all"
+              style={{ color: "#fff" }}
             >
               Start Earning <ArrowRight size={13} />
             </a>
             <button
               onClick={toggle}
-              className="flex items-center justify-center w-8 h-8 rounded-sm transition-colors"
+              className="flex items-center justify-center w-8 h-8 rounded-sm transition-colors cursor-pointer"
               style={{ background: "var(--surface)" }}
               aria-label="Toggle theme"
             >
@@ -412,14 +427,14 @@ export default function Home() {
             <div className="mt-6 flex flex-col sm:flex-row gap-3">
               <a
                 href="/signup/creator"
-                className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-sm transition-all"
-                style={{ background: "var(--accent)", color: "#fff" }}
+                className="cta-party inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-sm transition-all"
+                style={{ color: "#fff" }}
               >
                 Claim Your First Bounty <ArrowRight size={14} />
               </a>
               <a
                 href="/signup/company"
-                className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-sm border transition-all text-text-muted hover:text-text"
+                className="btn-outline-draw inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-sm border transition-all text-text-muted hover:text-text"
                 style={{ borderColor: "var(--border-strong)" }}
               >
                 I&apos;m a Brand
@@ -517,8 +532,8 @@ export default function Home() {
             </div>
             <a
               href="/signup/creator"
-              className="inline-flex items-center gap-2 px-6 py-3 text-sm font-medium rounded-sm transition-all flex-shrink-0"
-              style={{ background: "var(--accent)", color: "#fff" }}
+              className="cta-party inline-flex items-center gap-2 px-6 py-3 text-sm font-medium rounded-sm transition-all flex-shrink-0"
+              style={{ color: "#fff" }}
             >
               Create Your Profile <ArrowRight size={14} />
             </a>
