@@ -942,12 +942,7 @@ export default function DashboardPage() {
           )}
         </section>
 
-        <footer className="px-6 md:px-12 lg:px-24 py-8 border-t" style={{ borderColor: "var(--border)" }}>
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-text-muted font-light">agora</span>
-            <span className="font-mono text-[11px] text-text-muted uppercase tracking-wide">© 2026 Agora</span>
-          </div>
-        </footer>
+{/* footer removed — global Footer in layout.tsx handles it */}
       </div>
     </>
   );
