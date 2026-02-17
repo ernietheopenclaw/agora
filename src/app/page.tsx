@@ -388,7 +388,7 @@ export default function Home() {
           }}
         >
           <div className="flex items-center gap-2">
-            <AgoraLogo size={24} />
+            <span className="logo-spin-hover"><AgoraLogo size={24} /></span>
             <span className="text-base font-light tracking-tight text-text">agora</span>
           </div>
           <div className="flex items-center gap-3">
