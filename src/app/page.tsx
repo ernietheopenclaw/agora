@@ -318,7 +318,7 @@ function Dropdown({
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-1.5 cursor-pointer font-mono text-[11px] uppercase tracking-wider px-3 transition-all duration-200"
+        className="flex items-center gap-1.5 cursor-pointer font-mono text-[11px] uppercase tracking-wider px-3 transition-all duration-200 min-w-[160px] justify-between"
         style={{
           background: "var(--surface)",
           color: value ? "var(--text)" : "var(--text-muted)",
