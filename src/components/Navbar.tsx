@@ -76,7 +76,7 @@ export function Navbar() {
             <div className="hidden sm:flex items-center gap-1">
               {[
                 { href: "/", label: "Bounties", icon: Crosshair },
-                { href: "/stats", label: "Stats", icon: BarChart3 },
+                { href: "/stats", label: "Dashboard", icon: BarChart3 },
                 { href: "/profile", label: "Profile", icon: UserCircle },
               ].map(({ href, label, icon: Icon }) => {
                 const active = pathname === href;
@@ -143,7 +143,7 @@ export function Navbar() {
                     className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-text font-light transition-colors duration-150 hover:bg-[var(--border)]"
                   >
                     <BarChart3 size={14} className="text-text-muted" />
-                    Stats
+                    Dashboard
                   </Link>
                   <Link
                     href="/profile"
