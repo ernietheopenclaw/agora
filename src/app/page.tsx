@@ -15,6 +15,22 @@ import {
 import { useState, useMemo, useEffect, useRef } from "react";
 import Link from "next/link";
 import { AgoraLogo } from "../components/AgoraLogo";
+import { DUMMY_BOUNTIES } from "../data/bounties";
+
+function mapDummyToApiBounty(b: (typeof DUMMY_BOUNTIES)[number]) {
+  return {
+    id: b.id,
+    title: b.title,
+    description: b.fullDescription,
+    platform: b.platform,
+    contentType: b.contentType,
+    niche: b.niche,
+    requirements: b.requirements.join("\n"),
+    budget: b.budget,
+    deadline: b.deadline,
+    company: { companyName: b.brand, description: b.brandDescription },
+  };
+}
 
 interface Bounty {
   id: string;
@@ -276,9 +292,12 @@ export default function Home() {
     fetch("/api/bounties")
       .then((r) => r.json())
       .then((data) => {
-        if (Array.isArray(data)) setBounties(data);
+        if (Array.isArray(data) && data.length > 0) setBounties(data);
+        else setBounties(DUMMY_BOUNTIES.map(mapDummyToApiBounty));
       })
-      .catch(console.error)
+      .catch(() => {
+        setBounties(DUMMY_BOUNTIES.map(mapDummyToApiBounty));
+      })
       .finally(() => setLoading(false));
   }, []);
 

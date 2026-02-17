@@ -6,6 +6,7 @@ import Link from "next/link";
 import { AgoraLogo } from "../../../components/AgoraLogo";
 import { useParams } from "next/navigation";
 import { useState, useEffect } from "react";
+import { DUMMY_BOUNTIES } from "../../../data/bounties";
 import {
   Sun,
   Moon,
@@ -76,16 +77,38 @@ export default function BountyDetail() {
   const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
+    function fallbackToDummy() {
+      const dummy = DUMMY_BOUNTIES.find((b) => b.id === id);
+      if (dummy) {
+        setBounty({
+          id: dummy.id,
+          title: dummy.title,
+          description: dummy.fullDescription,
+          platform: dummy.platform,
+          contentType: dummy.contentType,
+          niche: dummy.niche,
+          requirements: dummy.requirements.join("\n"),
+          budget: dummy.budget,
+          deadline: dummy.deadline,
+          status: "open",
+          allowResubmission: false,
+          company: { companyName: dummy.brand, description: dummy.brandDescription },
+        });
+      } else {
+        setNotFound(true);
+      }
+    }
+
     fetch(`/api/bounties/${id}`)
       .then((r) => {
-        if (!r.ok) { setNotFound(true); return null; }
+        if (!r.ok) { fallbackToDummy(); return null; }
         return r.json();
       })
       .then((data) => {
         if (data && !data.error) setBounty(data);
-        else setNotFound(true);
+        else fallbackToDummy();
       })
-      .catch(() => setNotFound(true))
+      .catch(() => fallbackToDummy())
       .finally(() => setLoading(false));
   }, [id]);
 
