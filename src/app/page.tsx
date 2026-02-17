@@ -11,6 +11,7 @@ import {
   DollarSign,
   X,
   ChevronDown,
+  ChevronUp,
   Search,
 } from "lucide-react";
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
@@ -389,6 +390,79 @@ function Dropdown({
   );
 }
 
+function NumberStepper({
+  value,
+  onChange,
+  placeholder,
+  isDark,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder: string;
+  isDark: boolean;
+}) {
+  const step = (dir: number) => {
+    const current = parseInt(value) || 0;
+    const next = Math.max(0, current + dir * 1000);
+    onChange(next === 0 ? "" : String(next));
+  };
+
+  return (
+    <div
+      className="relative flex items-center"
+      style={{
+        background: "var(--surface)",
+        border: "1px solid var(--border)",
+        borderRadius: isDark ? "2px" : "8px",
+        height: "36px",
+        width: "110px",
+        boxShadow: !isDark ? "0 1px 3px rgba(45,41,38,0.04)" : "none",
+        overflow: "hidden",
+      }}
+    >
+      <input
+        type="text"
+        inputMode="numeric"
+        value={value}
+        onChange={(e) => {
+          const v = e.target.value.replace(/[^0-9]/g, "");
+          onChange(v);
+        }}
+        placeholder={placeholder}
+        className="flex-1 min-w-0 font-mono text-[11px] uppercase tracking-wider px-2.5 text-text placeholder:text-text-muted outline-none bg-transparent"
+        style={{ height: "100%" }}
+        onFocus={(e) => {
+          const parent = e.currentTarget.parentElement;
+          if (parent) parent.style.borderColor = "var(--border-strong)";
+        }}
+        onBlur={(e) => {
+          const parent = e.currentTarget.parentElement;
+          if (parent) parent.style.borderColor = "var(--border)";
+        }}
+      />
+      <div className="flex flex-col flex-shrink-0 border-l" style={{ borderColor: "var(--border)", height: "100%" }}>
+        <button
+          type="button"
+          onClick={() => step(1)}
+          className="flex items-center justify-center flex-1 px-1 text-text-muted hover:text-text hover:bg-[var(--border)] transition-colors cursor-pointer"
+          tabIndex={-1}
+        >
+          <ChevronUp size={10} strokeWidth={2} />
+        </button>
+        <div style={{ height: "1px", background: "var(--border)" }} />
+        <button
+          type="button"
+          onClick={() => step(-1)}
+          className="flex items-center justify-center flex-1 px-1 text-text-muted hover:text-text hover:bg-[var(--border)] transition-colors cursor-pointer"
+          tabIndex={-1}
+        >
+          <ChevronDown size={10} strokeWidth={2} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function Home() {
   const { theme, toggle } = useTheme();
   const isDark = theme === "dark";
@@ -586,42 +660,19 @@ export default function Home() {
               isDark={isDark}
             />
             <div className="flex items-center gap-1.5">
-              <input
-                type="number"
+              <Label>Followers</Label>
+              <NumberStepper
                 value={followerMin}
-                onChange={(e) => setFollowerMin(e.target.value)}
-                placeholder="Min followers"
-                className="font-mono text-[11px] uppercase tracking-wider px-3 text-text placeholder:text-text-muted outline-none transition-all duration-200"
-                style={{
-                  background: "var(--surface)",
-                  border: `1px solid var(--border)`,
-                  borderRadius: isDark ? "2px" : "8px",
-                  height: "36px",
-                  width: "120px",
-                  boxShadow: !isDark ? "0 1px 3px rgba(45,41,38,0.04)" : "none",
-                }}
-                onFocus={(e) => (e.currentTarget.style.borderColor = "var(--border-strong)")}
-                onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border)")}
-                min={0}
+                onChange={setFollowerMin}
+                placeholder="Min"
+                isDark={isDark}
               />
               <span className="text-text-muted text-[11px] font-mono">–</span>
-              <input
-                type="number"
+              <NumberStepper
                 value={followerMax}
-                onChange={(e) => setFollowerMax(e.target.value)}
-                placeholder="Max followers"
-                className="font-mono text-[11px] uppercase tracking-wider px-3 text-text placeholder:text-text-muted outline-none transition-all duration-200"
-                style={{
-                  background: "var(--surface)",
-                  border: `1px solid var(--border)`,
-                  borderRadius: isDark ? "2px" : "8px",
-                  height: "36px",
-                  width: "120px",
-                  boxShadow: !isDark ? "0 1px 3px rgba(45,41,38,0.04)" : "none",
-                }}
-                onFocus={(e) => (e.currentTarget.style.borderColor = "var(--border-strong)")}
-                onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border)")}
-                min={0}
+                onChange={setFollowerMax}
+                placeholder="Max"
+                isDark={isDark}
               />
             </div>
             {activeFilterCount > 0 && (
