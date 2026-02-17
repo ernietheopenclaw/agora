@@ -76,6 +76,8 @@ export default function CreatorSignupPage() {
     });
   }
 
+  const hasSocials = !!(form.tiktok || form.instagram || form.youtube || form.twitter);
+
   function renderInput(key: string, label: string, Icon: React.ElementType, type: string, placeholder: string, required: boolean, iconSize = 16, pl = "pl-10") {
     return (
       <div key={key} className="flex flex-col gap-1.5">
@@ -202,7 +204,7 @@ export default function CreatorSignupPage() {
                 >
                   Continue <ArrowRight size={14} />
                 </button>
-              ) : (
+              ) : hasSocials ? (
                 <button
                   type="button"
                   onClick={handleSubmit}
@@ -210,7 +212,17 @@ export default function CreatorSignupPage() {
                   className="flex-1 flex items-center justify-center gap-2 px-6 py-3 text-sm font-medium rounded-sm transition-all"
                   style={{ background: "var(--accent)", color: "#fff", opacity: loading ? 0.7 : 1 }}
                 >
-                  {loading ? <Loader2 size={16} className="animate-spin" /> : <>Create Creator Account <ArrowRight size={14} /></>}
+                  {loading ? <Loader2 size={16} className="animate-spin" /> : <>Create Account <ArrowRight size={14} /></>}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleSubmit}
+                  disabled={loading}
+                  className="flex-1 flex items-center justify-center gap-2 px-6 py-3 text-sm font-medium rounded-sm transition-all"
+                  style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text)", opacity: loading ? 0.7 : 1 }}
+                >
+                  {loading ? <Loader2 size={16} className="animate-spin" /> : <>Skip for now <ArrowRight size={14} /></>}
                 </button>
               )}
             </div>
