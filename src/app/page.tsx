@@ -125,7 +125,7 @@ function daysUntil(dateStr: string): number {
 function BountyCardShell({ isDark, children }: { isDark: boolean; children: React.ReactNode }) {
   return (
     <div
-      className="group block p-5 md:p-6 transition-all duration-200"
+      className="group block p-5 md:p-6 transition-all duration-200 hover:!border-[var(--accent-mid)]"
       style={{
         background: "var(--surface)",
         border: "1px solid var(--border)",
@@ -196,7 +196,7 @@ function BountyCardContent({ bounty, isDark, index = 0, loaded }: { bounty?: Bou
                   <span className="text-text-muted text-[11px]">·</span>
                   <Label>{bounty.contentType}</Label>
                 </div>
-                <h3 className="text-text font-light text-base md:text-lg leading-snug hover:text-accent-mid transition-colors duration-200">
+                <h3 className="text-text font-light text-base md:text-lg leading-snug">
                   {bounty.title}
                 </h3>
                 <p className="mt-1.5 text-text-muted text-sm font-light truncate">{bounty.company.companyName}</p>
