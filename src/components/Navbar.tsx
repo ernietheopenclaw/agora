@@ -4,7 +4,7 @@ import { useSession, signOut } from "next-auth/react";
 import { useTheme } from "../app/theme-provider";
 import { SpinningLogo } from "./SpinningLogo";
 import { AgoraLogo } from "./AgoraLogo";
-import { Sun, Moon, ArrowRight, LogOut, Settings, ChevronDown, BarChart3, Crosshair } from "lucide-react";
+import { Sun, Moon, ArrowRight, LogOut, Settings, ChevronDown, BarChart3, Crosshair, LayoutDashboard } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
