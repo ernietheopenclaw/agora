@@ -12,6 +12,7 @@ export default function CreatorSignupPage() {
   const isDark = theme === "dark";
   const [form, setForm] = useState({ displayName: "", email: "", password: "", bio: "", tiktok: "", instagram: "", youtube: "", twitter: "" });
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
 
   function update(field: string, value: string) {
@@ -21,6 +22,23 @@ export default function CreatorSignupPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    setFieldErrors({});
+
+    const errors: Record<string, string> = {};
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+      errors.email = "Please enter a valid email";
+    }
+    if (form.password.length < 8) {
+      errors.password = "Password must be at least 8 characters";
+    }
+    if (!form.displayName.trim()) {
+      errors.displayName = "Display name is required";
+    }
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return;
+    }
+
     setLoading(true);
 
     const socialLinks = {
@@ -113,15 +131,16 @@ export default function CreatorSignupPage() {
                   <input
                     type={f.type}
                     value={form[f.key as keyof typeof form]}
-                    onChange={(e) => update(f.key, e.target.value)}
+                    onChange={(e) => { update(f.key, e.target.value); setFieldErrors((fe) => { const n = { ...fe }; delete n[f.key]; return n; }); }}
                     required={f.required}
                     className="w-full pl-10 pr-4 py-2.5 text-sm text-text rounded-sm outline-none transition-colors"
-                    style={{ background: "var(--surface)", border: "1px solid var(--border)", fontFamily: "Inter, system-ui, sans-serif" }}
-                    onFocus={(e) => (e.target.style.borderColor = "var(--accent-mid)")}
-                    onBlur={(e) => (e.target.style.borderColor = "var(--border)")}
+                    style={{ background: "var(--surface)", border: `1px solid ${fieldErrors[f.key] ? "#c67a5c" : "var(--border)"}`, fontFamily: "Inter, system-ui, sans-serif" }}
+                    onFocus={(e) => (e.target.style.borderColor = fieldErrors[f.key] ? "#c67a5c" : "var(--accent-mid)")}
+                    onBlur={(e) => (e.target.style.borderColor = fieldErrors[f.key] ? "#c67a5c" : "var(--border)")}
                     placeholder={f.placeholder}
                   />
                 </div>
+                {fieldErrors[f.key] && <span className="text-xs" style={{ color: "#c67a5c" }}>{fieldErrors[f.key]}</span>}
               </div>
             ))}
 

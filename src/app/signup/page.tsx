@@ -9,7 +9,7 @@ import {
   Building2, Globe, Briefcase, FileText, Check, SkipForward,
 } from "lucide-react";
 import Link from "next/link";
-import { AgoraLogo } from "../../components/AgoraLogo";
+import { Navbar } from "../../components/Navbar";
 
 function GoogleIcon({ size = 18 }: { size?: number }) {
   return (
@@ -460,14 +460,29 @@ function SignupPage() {
                 onClick={handleStep2Next}
                 className="flex-1 flex items-center justify-center gap-2 px-6 py-3 text-sm font-medium transition-all cursor-pointer"
                 style={{
-                  background: "var(--accent)",
-                  color: "#fff",
+                  background: "var(--surface)",
+                  border: "1px solid var(--border)",
+                  color: "var(--text)",
                   borderRadius: isDark ? "2px" : "8px",
                 }}
               >
                 Continue <ArrowRight size={14} />
               </button>
             </div>
+
+            <button
+              onClick={handleFinish}
+              disabled={loading}
+              className="flex items-center justify-center gap-2 px-6 py-3 text-sm font-medium transition-all cursor-pointer"
+              style={{
+                background: "var(--accent)",
+                color: "#fff",
+                borderRadius: isDark ? "2px" : "8px",
+                opacity: loading ? 0.7 : 1,
+              }}
+            >
+              {loading ? <Loader2 size={16} className="animate-spin" /> : <>Create Account <Check size={14} /></>}
+            </button>
           </div>
         );
 
@@ -579,23 +594,16 @@ function SignupPage() {
                 disabled={loading}
                 className="flex-1 flex items-center justify-center gap-2 px-6 py-3 text-sm font-medium transition-all cursor-pointer"
                 style={{
-                  background: "var(--accent)",
-                  color: "#fff",
+                  background: "var(--surface)",
+                  border: "1px solid var(--border)",
+                  color: "var(--text)",
                   borderRadius: isDark ? "2px" : "8px",
                   opacity: loading ? 0.7 : 1,
                 }}
               >
-                {loading ? <Loader2 size={16} className="animate-spin" /> : <>Create Account <Check size={14} /></>}
+                {loading ? <Loader2 size={16} className="animate-spin" /> : <><SkipForward size={13} /> Skip for now</>}
               </button>
             </div>
-
-            <button
-              onClick={handleFinish}
-              disabled={loading}
-              className="text-center text-sm text-text-muted hover:text-text transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-            >
-              <SkipForward size={13} /> Skip for now
-            </button>
           </div>
         );
     }

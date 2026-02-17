@@ -5,6 +5,7 @@ import { useTheme } from "../app/theme-provider";
 import { SpinningLogo } from "./SpinningLogo";
 import { Sun, Moon, ArrowRight, LogOut, LayoutDashboard, Settings, ChevronDown } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import Link from "next/link";
 
 function UserAvatar({ name }: { name: string }) {
@@ -27,6 +28,8 @@ export function Navbar() {
   const { theme, toggle } = useTheme();
   const isDark = theme === "dark";
   const { data: session, status } = useSession();
+  const pathname = usePathname();
+  const isHome = pathname === "/";
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -52,10 +55,17 @@ export function Navbar() {
         borderBottom: "1px solid var(--border)",
       }}
     >
-      <Link href="/" className="flex items-center gap-2">
-        <SpinningLogo size={24} />
-        <span className="text-base font-light tracking-tight text-text">agora</span>
-      </Link>
+      {isHome ? (
+        <div className="flex items-center gap-2">
+          <SpinningLogo size={24} />
+          <span className="text-base font-light tracking-tight text-text">agora</span>
+        </div>
+      ) : (
+        <Link href="/" className="flex items-center gap-2">
+          <SpinningLogo size={24} />
+          <span className="text-base font-light tracking-tight text-text">agora</span>
+        </Link>
+      )}
       <div className="flex items-center gap-3">
         {status === "loading" ? (
           <div className="w-20 h-4 rounded" style={{ background: "var(--border)" }} />
