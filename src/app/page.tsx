@@ -68,14 +68,6 @@ function extractFollowerCount(requirements: string | null): number {
 
 const ALL_PLATFORMS = ["Instagram", "TikTok", "YouTube", "Twitter/X"].sort();
 const ALL_NICHES = ["Fashion", "Food & Drink", "Tech", "Fitness", "Travel", "Beauty", "Pets", "Lifestyle", "Business"].sort();
-const FOLLOWER_RANGES = [
-  { label: "Any", value: "", max: Infinity },
-  { label: "1k+", value: "1000", max: 1000 },
-  { label: "5k+", value: "5000", max: 5000 },
-  { label: "10k+", value: "10000", max: 10000 },
-  { label: "15k+", value: "15000", max: 15000 },
-  { label: "25k+", value: "25000", max: 25000 },
-];
 const PAY_RANGES = [
   { label: "Any", min: 0, max: Infinity },
   { label: "$100–$300", min: 100, max: 300 },
@@ -161,7 +153,7 @@ function BountyCardContent({ bounty, isDark, index = 0, loaded }: { bounty?: Bou
       {/* Skeleton layer */}
       <div
         className="transition-opacity duration-300"
-        style={{ opacity: revealed ? 0 : 1, pointerEvents: revealed ? "none" : "auto" }}
+        style={{ opacity: revealed ? 0 : 1, pointerEvents: revealed ? "none" : "auto", height: revealed ? 0 : "auto", overflow: revealed ? "hidden" : "visible" }}
       >
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
@@ -187,7 +179,7 @@ function BountyCardContent({ bounty, isDark, index = 0, loaded }: { bounty?: Bou
       {/* Real content layer */}
       {bounty && (
         <div
-          className="absolute inset-0"
+          className={revealed ? "relative" : "absolute inset-0"}
           style={{
             clipPath: revealed ? "inset(0 0% 0 0)" : "inset(0 100% 0 0)",
             transition: "clip-path 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
@@ -222,7 +214,7 @@ function BountyCardContent({ bounty, isDark, index = 0, loaded }: { bounty?: Bou
                 </div>
               </div>
             </div>
-            <div className="mt-3 flex items-center gap-2">
+            <div className="mt-3 flex items-center gap-2 flex-wrap">
               {bounty.niche && (
                 <span
                   className="font-mono text-[10px] uppercase tracking-wider px-2 py-0.5"
@@ -406,7 +398,8 @@ export default function Home() {
   const [platformFilter, setPlatformFilter] = useState("");
   const [nicheFilter, setNicheFilter] = useState("");
   const [payRange, setPayRange] = useState(0); // index into PAY_RANGES
-  const [followerFilter, setFollowerFilter] = useState("");
+  const [followerMin, setFollowerMin] = useState("");
+  const [followerMax, setFollowerMax] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
@@ -432,10 +425,10 @@ export default function Home() {
       if (nicheFilter && b.niche !== nicheFilter) return false;
       const range = PAY_RANGES[payRange];
       if (b.budget < range.min || b.budget > range.max) return false;
-      if (followerFilter) {
-        const maxFollowers = parseInt(followerFilter);
+      {
         const required = extractFollowerCount(b.requirements);
-        if (required > maxFollowers) return false;
+        if (followerMin && required < parseInt(followerMin)) return false;
+        if (followerMax && required > parseInt(followerMax)) return false;
       }
       if (q) {
         const matchTitle = b.title.toLowerCase().includes(q);
@@ -444,9 +437,9 @@ export default function Home() {
       }
       return true;
     });
-  }, [bounties, platformFilter, nicheFilter, payRange, followerFilter, searchQuery]);
+  }, [bounties, platformFilter, nicheFilter, payRange, followerMin, followerMax, searchQuery]);
 
-  const activeFilterCount = [platformFilter, nicheFilter, payRange > 0, followerFilter].filter(Boolean).length;
+  const activeFilterCount = [platformFilter, nicheFilter, payRange > 0, followerMin, followerMax].filter(Boolean).length;
 
   return (
     <>
@@ -592,20 +585,53 @@ export default function Home() {
               onChange={(v) => setPayRange(v ? parseInt(v) : 0)}
               isDark={isDark}
             />
-            <Dropdown
-              label="Followers"
-              options={FOLLOWER_RANGES.slice(1).map((f) => ({ label: f.label, value: f.value }))}
-              value={followerFilter}
-              onChange={setFollowerFilter}
-              isDark={isDark}
-            />
+            <div className="flex items-center gap-1.5">
+              <input
+                type="number"
+                value={followerMin}
+                onChange={(e) => setFollowerMin(e.target.value)}
+                placeholder="Min followers"
+                className="font-mono text-[11px] uppercase tracking-wider px-3 text-text placeholder:text-text-muted outline-none transition-all duration-200"
+                style={{
+                  background: "var(--surface)",
+                  border: `1px solid var(--border)`,
+                  borderRadius: isDark ? "2px" : "8px",
+                  height: "36px",
+                  width: "120px",
+                  boxShadow: !isDark ? "0 1px 3px rgba(45,41,38,0.04)" : "none",
+                }}
+                onFocus={(e) => (e.currentTarget.style.borderColor = "var(--border-strong)")}
+                onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border)")}
+                min={0}
+              />
+              <span className="text-text-muted text-[11px] font-mono">–</span>
+              <input
+                type="number"
+                value={followerMax}
+                onChange={(e) => setFollowerMax(e.target.value)}
+                placeholder="Max followers"
+                className="font-mono text-[11px] uppercase tracking-wider px-3 text-text placeholder:text-text-muted outline-none transition-all duration-200"
+                style={{
+                  background: "var(--surface)",
+                  border: `1px solid var(--border)`,
+                  borderRadius: isDark ? "2px" : "8px",
+                  height: "36px",
+                  width: "120px",
+                  boxShadow: !isDark ? "0 1px 3px rgba(45,41,38,0.04)" : "none",
+                }}
+                onFocus={(e) => (e.currentTarget.style.borderColor = "var(--border-strong)")}
+                onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border)")}
+                min={0}
+              />
+            </div>
             {activeFilterCount > 0 && (
               <button
                 onClick={() => {
                   setPlatformFilter("");
                   setNicheFilter("");
                   setPayRange(0);
-                  setFollowerFilter("");
+                  setFollowerMin("");
+                  setFollowerMax("");
                 }}
                 className="font-mono text-[11px] uppercase tracking-wider text-accent-mid hover:text-accent transition-colors"
               >
@@ -628,7 +654,8 @@ export default function Home() {
                   setPlatformFilter("");
                   setNicheFilter("");
                   setPayRange(0);
-                  setFollowerFilter("");
+                  setFollowerMin("");
+                  setFollowerMax("");
                   setSearchQuery("");
                 }}
                 className="mt-3 text-accent-mid text-sm hover:underline"
