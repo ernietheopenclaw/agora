@@ -19,7 +19,6 @@ import {
 } from "lucide-react";
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
-import { AgoraLogo } from "../components/AgoraLogo";
 import { SpinningLogo } from "../components/SpinningLogo";
 import { BountyGridSkeleton } from "../components/Skeletons";
 import { Navbar } from "../components/Navbar";
@@ -896,47 +895,6 @@ export default function Home() {
           )}
         </section>
 
-        {/* Bottom CTA — logged-out only */}
-        {!isLoggedIn && (
-          <section
-            className="px-6 md:px-12 lg:px-24 py-16"
-            style={{ borderTop: "1px solid var(--border)" }}
-          >
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-              <div>
-                <h2 className="text-text font-extralight text-2xl md:text-3xl">
-                  More bounties drop daily.
-                </h2>
-                <p className="mt-2 text-text-muted text-base">
-                  Sign up to get notified and apply before slots fill up.
-                </p>
-              </div>
-              <a
-                href="/signup"
-                className="cta-party inline-flex items-center gap-2 px-6 py-3 text-sm font-medium rounded-sm transition-all flex-shrink-0"
-                style={{ color: "#fff" }}
-              >
-                Create Your Profile <ArrowRight size={14} />
-              </a>
-            </div>
-          </section>
-        )}
-
-        {/* Footer */}
-        <footer
-          className="px-6 md:px-12 lg:px-24 py-8 border-t"
-          style={{ borderColor: "var(--border)" }}
-        >
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <AgoraLogo size={18} />
-              <span className="text-sm text-text-muted font-light">agora</span>
-            </div>
-            <span className="font-mono text-[11px] text-text-muted uppercase tracking-wide">
-              © 2026 Agora. All rights reserved.
-            </span>
-          </div>
-        </footer>
       </div>
     </>
   );
