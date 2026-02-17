@@ -19,16 +19,21 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
-        });
+        try {
+          const user = await prisma.user.findUnique({
+            where: { email: credentials.email },
+          });
 
-        if (!user) return null;
+          if (!user) return null;
 
-        const isValid = await compare(credentials.password, user.password);
-        if (!isValid) return null;
+          const isValid = await compare(credentials.password, user.password);
+          if (!isValid) return null;
 
-        return { id: user.id, email: user.email, role: user.role };
+          return { id: user.id, email: user.email, role: user.role };
+        } catch (error) {
+          console.error("authorize: DB error", error);
+          return null;
+        }
       },
     }),
   ],
@@ -39,32 +44,37 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async signIn({ user, account }) {
       if (account?.provider === "google") {
-        // Check if user exists
-        const existing = await prisma.user.findUnique({
-          where: { email: user.email! },
-        });
-        if (existing) {
-          // Existing user — allow sign in
-          return true;
+        try {
+          const existing = await prisma.user.findUnique({
+            where: { email: user.email! },
+          });
+          if (existing) {
+            return true;
+          }
+          return `/signup?email=${encodeURIComponent(user.email!)}&name=${encodeURIComponent(user.name || "")}&provider=google`;
+        } catch (error) {
+          console.error("signIn: DB error", error);
+          return false;
         }
-        // New Google user — redirect to signup with email prefilled
-        return `/signup?email=${encodeURIComponent(user.email!)}&name=${encodeURIComponent(user.name || "")}&provider=google`;
       }
       return true;
     },
     async jwt({ token, user, account }) {
-      if (account?.provider === "google" && user?.email) {
-        // Fetch the DB user to get role and id
-        const dbUser = await prisma.user.findUnique({
-          where: { email: user.email },
-        });
-        if (dbUser) {
-          token.role = dbUser.role;
-          token.id = dbUser.id;
+      try {
+        if (account?.provider === "google" && user?.email) {
+          const dbUser = await prisma.user.findUnique({
+            where: { email: user.email },
+          });
+          if (dbUser) {
+            token.role = dbUser.role;
+            token.id = dbUser.id;
+          }
+        } else if (user) {
+          token.role = (user as unknown as { role: string }).role;
+          token.id = user.id;
         }
-      } else if (user) {
-        token.role = (user as unknown as { role: string }).role;
-        token.id = user.id;
+      } catch (error) {
+        console.error("jwt callback: DB error", error);
       }
       return token;
     },
