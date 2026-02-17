@@ -15,6 +15,7 @@ import {
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { AgoraLogo } from "../components/AgoraLogo";
+import { SpinningLogo } from "../components/SpinningLogo";
 import { BountyGridSkeleton } from "../components/Skeletons";
 import { DUMMY_BOUNTIES } from "../data/bounties";
 
@@ -388,7 +389,7 @@ export default function Home() {
           }}
         >
           <div className="flex items-center gap-2">
-            <span className="logo-spin-hover"><AgoraLogo size={24} /></span>
+            <SpinningLogo size={24} />
             <span className="text-base font-light tracking-tight text-text">agora</span>
           </div>
           <div className="flex items-center gap-3">
