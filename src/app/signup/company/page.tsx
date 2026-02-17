@@ -3,12 +3,12 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useTheme } from "../../theme-provider";
-import { Sun, Moon, ArrowRight, Loader2, Building2, Mail, Lock, Globe, Briefcase } from "lucide-react";
+import { ArrowRight, Loader2, Building2, Mail, Lock, Globe, Briefcase } from "lucide-react";
 import Link from "next/link";
-import { AgoraLogo } from "../../../components/AgoraLogo";
+import { Navbar } from "../../../components/Navbar";
 
 export default function CompanySignupPage() {
-  const { theme, toggle } = useTheme();
+  const { theme } = useTheme();
   const isDark = theme === "dark";
   const [form, setForm] = useState({ companyName: "", email: "", password: "", website: "", industry: "" });
   const [error, setError] = useState("");
@@ -72,21 +72,9 @@ export default function CompanySignupPage() {
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: "var(--bg)" }}>
-      <nav className="flex items-center justify-between px-6 py-4 md:px-12" style={{ borderBottom: "1px solid var(--border)" }}>
-        <Link href="/" className="flex items-center gap-2 no-underline">
-          <AgoraLogo size={24} />
-          <span className="text-base font-light tracking-tight text-text">agora</span>
-        </Link>
-        <button
-          onClick={toggle}
-          className="flex items-center justify-center transition-colors cursor-pointer"
-          aria-label="Toggle theme"
-        >
-          {isDark ? <Sun size={16} strokeWidth={1.5} className="text-text-muted" /> : <Moon size={16} strokeWidth={1.5} fill="var(--text-muted)" className="text-text-muted" />}
-        </button>
-      </nav>
+      <Navbar />
 
-      <div className="flex-1 flex items-center justify-center px-6 py-16">
+      <div className="flex-1 flex items-center justify-center px-6 py-16 pt-20 md:pt-24">
         <div className="w-full max-w-sm">
           <div className="mb-8">
             <span className="font-mono text-[11px] uppercase tracking-[0.15em] text-text-muted">For companies</span>

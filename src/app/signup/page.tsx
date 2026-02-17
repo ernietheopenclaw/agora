@@ -5,7 +5,7 @@ import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTheme } from "../theme-provider";
 import {
-  Sun, Moon, ArrowRight, ArrowLeft, Loader2, Mail, Lock, User,
+  ArrowRight, ArrowLeft, Loader2, Mail, Lock, User,
   Building2, Globe, Briefcase, FileText, Check, SkipForward,
 } from "lucide-react";
 import Link from "next/link";
@@ -86,7 +86,7 @@ export default function SignupPageWrapper() {
 }
 
 function SignupPage() {
-  const { theme, toggle } = useTheme();
+  const { theme } = useTheme();
   const isDark = theme === "dark";
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -611,22 +611,10 @@ function SignupPage() {
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: "var(--bg)" }}>
-      <nav className="flex items-center justify-between px-6 py-4 md:px-12" style={{ borderBottom: "1px solid var(--border)" }}>
-        <Link href="/" className="flex items-center gap-2 no-underline">
-          <AgoraLogo size={24} />
-          <span className="text-base font-light tracking-tight text-text">agora</span>
-        </Link>
-        <button
-          onClick={toggle}
-          className="flex items-center justify-center transition-colors cursor-pointer"
-          aria-label="Toggle theme"
-        >
-          {isDark ? <Sun size={16} strokeWidth={1.5} className="text-text-muted" /> : <Moon size={16} strokeWidth={1.5} fill="var(--text-muted)" className="text-text-muted" />}
-        </button>
-      </nav>
+      <Navbar />
 
       {/* Progress bar */}
-      <div className="px-6 md:px-12 pt-6">
+      <div className="px-6 md:px-12 pt-20 md:pt-24">
         <div className="max-w-sm mx-auto flex gap-2">
           {[1, 2, 3].map((s) => (
             <div
