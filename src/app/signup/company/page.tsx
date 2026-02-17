@@ -3,13 +3,14 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useTheme } from "../../theme-provider";
-import { ArrowRight, Loader2, Building2, Mail, Lock, Globe, Briefcase } from "lucide-react";
+import { ArrowRight, ArrowLeft, Loader2, Building2, Mail, Lock, Globe, Briefcase } from "lucide-react";
 import Link from "next/link";
 import { Navbar } from "../../../components/Navbar";
 
 export default function CompanySignupPage() {
   const { theme } = useTheme();
   const isDark = theme === "dark";
+  const [step, setStep] = useState(1);
   const [form, setForm] = useState({ companyName: "", email: "", password: "", website: "", industry: "" });
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -17,28 +18,28 @@ export default function CompanySignupPage() {
 
   function update(field: string, value: string) {
     setForm((f) => ({ ...f, [field]: value }));
+    setFieldErrors((fe) => { const n = { ...fe }; delete n[field]; return n; });
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError("");
-    setFieldErrors({});
-
+  function validateStep(s: number): boolean {
     const errors: Record<string, string> = {};
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
-      errors.email = "Please enter a valid email";
+    if (s === 1) {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errors.email = "Please enter a valid email";
+      if (form.password.length < 8) errors.password = "Password must be at least 8 characters";
+    } else if (s === 2) {
+      if (!form.companyName.trim()) errors.companyName = "Company name is required";
     }
-    if (form.password.length < 8) {
-      errors.password = "Password must be at least 8 characters";
-    }
-    if (!form.companyName.trim()) {
-      errors.companyName = "Company name is required";
-    }
-    if (Object.keys(errors).length > 0) {
-      setFieldErrors(errors);
-      return;
-    }
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  }
 
+  function nextStep() {
+    if (validateStep(step)) setStep(step + 1);
+  }
+
+  async function handleSubmit() {
+    if (!validateStep(step)) return;
+    setError("");
     setLoading(true);
 
     const res = await fetch("/api/auth/signup", {
@@ -62,13 +63,33 @@ export default function CompanySignupPage() {
     });
   }
 
-  const fields = [
-    { key: "companyName", label: "Company Name", icon: Building2, type: "text", required: true, placeholder: "Acme Inc." },
-    { key: "email", label: "Email", icon: Mail, type: "email", required: true, placeholder: "team@acme.com" },
-    { key: "password", label: "Password", icon: Lock, type: "password", required: true, placeholder: "••••••••" },
-    { key: "website", label: "Website", icon: Globe, type: "url", required: false, placeholder: "https://acme.com" },
-    { key: "industry", label: "Industry", icon: Briefcase, type: "text", required: false, placeholder: "Fashion, Tech, Food..." },
-  ];
+  function renderInput(key: string, label: string, Icon: React.ElementType, type: string, placeholder: string, required: boolean) {
+    return (
+      <div key={key} className="flex flex-col gap-1.5">
+        <label className="font-mono text-[11px] uppercase tracking-[0.15em] text-text-muted">
+          {label}{!required && <span className="normal-case tracking-normal"> (optional)</span>}
+        </label>
+        <div className="relative">
+          <Icon size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" strokeWidth={1.5} />
+          <input
+            type={type}
+            value={form[key as keyof typeof form]}
+            onChange={(e) => update(key, e.target.value)}
+            className="w-full pl-10 pr-4 py-2.5 text-sm text-text rounded-sm outline-none transition-colors"
+            style={{ background: "var(--surface)", border: `1px solid ${fieldErrors[key] ? "#c67a5c" : "var(--border)"}`, fontFamily: "Inter, system-ui, sans-serif" }}
+            onFocus={(e) => (e.target.style.borderColor = fieldErrors[key] ? "#c67a5c" : "var(--accent-mid)")}
+            onBlur={(e) => (e.target.style.borderColor = fieldErrors[key] ? "#c67a5c" : "var(--border)")}
+            placeholder={placeholder}
+          />
+        </div>
+        <div className="h-5 flex items-center">
+          <span className={`text-xs transition-opacity duration-200 ${fieldErrors[key] ? "opacity-100" : "opacity-0"}`} style={{ color: "#c67a5c" }}>{fieldErrors[key] || "\u00A0"}</span>
+        </div>
+      </div>
+    );
+  }
+
+  const stepLabels = ["Account", "Company Details"];
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: "var(--bg)" }}>
@@ -82,46 +103,77 @@ export default function CompanySignupPage() {
             <p className="mt-2 text-sm text-text-muted">Post bounties and connect with creators.</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            {error && (
-              <div className="text-sm px-3 py-2 rounded-sm" style={{ background: "rgba(198,122,92,0.1)", color: "#c67a5c" }}>
-                {error}
-              </div>
-            )}
-
-            {fields.map((f) => (
-              <div key={f.key} className="flex flex-col gap-1.5">
-                <label className="font-mono text-[11px] uppercase tracking-[0.15em] text-text-muted">
-                  {f.label}{!f.required && <span className="normal-case tracking-normal"> (optional)</span>}
-                </label>
-                <div className="relative">
-                  <f.icon size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" strokeWidth={1.5} />
-                  <input
-                    type={f.type}
-                    value={form[f.key as keyof typeof form]}
-                    onChange={(e) => { update(f.key, e.target.value); setFieldErrors((fe) => { const n = { ...fe }; delete n[f.key]; return n; }); }}
-                    className="w-full pl-10 pr-4 py-2.5 text-sm text-text rounded-sm outline-none transition-colors"
-                    style={{ background: "var(--surface)", border: `1px solid ${fieldErrors[f.key] ? "#c67a5c" : "var(--border)"}`, fontFamily: "Inter, system-ui, sans-serif" }}
-                    onFocus={(e) => (e.target.style.borderColor = fieldErrors[f.key] ? "#c67a5c" : "var(--accent-mid)")}
-                    onBlur={(e) => (e.target.style.borderColor = fieldErrors[f.key] ? "#c67a5c" : "var(--border)")}
-                    placeholder={f.placeholder}
+          {/* Step indicator */}
+          <div className="flex items-center gap-2 mb-6">
+            {stepLabels.map((label, i) => (
+              <div key={label} className="flex items-center gap-2 flex-1">
+                <div className="flex flex-col items-center flex-1">
+                  <div
+                    className="w-full h-1 rounded-full transition-colors duration-300"
+                    style={{ background: i + 1 <= step ? "var(--accent)" : "var(--border)" }}
                   />
-                </div>
-                <div className="h-5 flex items-center">
-                  <span className={`text-xs transition-opacity duration-200 ${fieldErrors[f.key] ? "opacity-100" : "opacity-0"}`} style={{ color: "#c67a5c" }}>{fieldErrors[f.key] || "\u00A0"}</span>
+                  <span className="mt-1.5 font-mono text-[10px] uppercase tracking-[0.1em]" style={{ color: i + 1 <= step ? "var(--accent)" : "var(--text-muted)" }}>{label}</span>
                 </div>
               </div>
             ))}
+          </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="mt-2 flex items-center justify-center gap-2 px-6 py-3 text-sm font-medium rounded-sm transition-all"
-              style={{ background: "var(--accent)", color: "#fff", opacity: loading ? 0.7 : 1 }}
-            >
-              {loading ? <Loader2 size={16} className="animate-spin" /> : <>Create Company Account <ArrowRight size={14} /></>}
-            </button>
-          </form>
+          {error && (
+            <div className="text-sm px-3 py-2 mb-4 rounded-sm" style={{ background: "rgba(198,122,92,0.1)", color: "#c67a5c" }}>
+              {error}
+            </div>
+          )}
+
+          <div className="flex flex-col gap-4">
+            {step === 1 && (
+              <>
+                {renderInput("email", "Email", Mail, "email", "team@acme.com", true)}
+                {renderInput("password", "Password", Lock, "password", "••••••••", true)}
+              </>
+            )}
+
+            {step === 2 && (
+              <>
+                {renderInput("companyName", "Company Name", Building2, "text", "Acme Inc.", true)}
+                {renderInput("website", "Website", Globe, "url", "https://acme.com", false)}
+                {renderInput("industry", "Industry", Briefcase, "text", "Fashion, Tech, Food...", false)}
+              </>
+            )}
+
+            {/* Navigation buttons */}
+            <div className="mt-2 flex gap-3">
+              {step > 1 && (
+                <button
+                  type="button"
+                  onClick={() => { setStep(step - 1); setFieldErrors({}); setError(""); }}
+                  className="flex items-center justify-center gap-2 px-5 py-3 text-sm font-medium rounded-sm transition-all"
+                  style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text)" }}
+                >
+                  <ArrowLeft size={14} /> Back
+                </button>
+              )}
+              {step < 2 ? (
+                <button
+                  type="button"
+                  onClick={nextStep}
+                  className="flex-1 flex items-center justify-center gap-2 px-6 py-3 text-sm font-medium rounded-sm transition-all"
+                  style={{ background: "var(--accent)", color: "#fff" }}
+                >
+                  Continue <ArrowRight size={14} />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleSubmit}
+                  disabled={loading}
+                  className="flex-1 flex items-center justify-center gap-2 px-6 py-3 text-sm font-medium rounded-sm transition-all"
+                  style={{ background: "var(--accent)", color: "#fff", opacity: loading ? 0.7 : 1 }}
+                >
+                  {loading ? <Loader2 size={16} className="animate-spin" /> : <>Create Company Account <ArrowRight size={14} /></>}
+                </button>
+              )}
+            </div>
+          </div>
 
           <div className="mt-8 text-center text-sm text-text-muted">
             Already have an account? <Link href="/login" className="text-accent-mid hover:underline">Sign in</Link>
