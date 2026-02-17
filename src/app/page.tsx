@@ -6,20 +6,30 @@ import {
   Sun,
   Moon,
   ArrowRight,
-  Hexagon,
   Filter,
   Clock,
   DollarSign,
   X,
   ChevronDown,
 } from "lucide-react";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 
-import { DUMMY_BOUNTIES, type Bounty } from "@/data/bounties";
+interface Bounty {
+  id: string;
+  title: string;
+  description: string;
+  platform: string;
+  contentType: string;
+  budget: number;
+  deadline: string;
+  niche: string | null;
+  requirements: string | null;
+  company: { companyName: string; description: string | null };
+}
 
-const PLATFORMS = [...new Set(DUMMY_BOUNTIES.map((b) => b.platform))].sort();
-const NICHES = [...new Set(DUMMY_BOUNTIES.map((b) => b.niche))].sort();
+const ALL_PLATFORMS = ["Instagram", "TikTok", "YouTube", "Twitter/X"].sort();
+const ALL_NICHES = ["Fashion", "Food & Drink", "Tech", "Fitness", "Travel", "Beauty", "Pets", "Lifestyle", "Business"].sort();
 const PAY_RANGES = [
   { label: "Any", min: 0, max: Infinity },
   { label: "$100–$300", min: 100, max: 300 },
@@ -27,6 +37,31 @@ const PAY_RANGES = [
   { label: "$600–$1000", min: 600, max: 1000 },
   { label: "$1000+", min: 1000, max: Infinity },
 ];
+
+function AgoraLogo({ size = 24 }: { size?: number }) {
+  return (
+    <svg
+      viewBox="0 0 32 32"
+      width={size}
+      height={size}
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <polygon
+        points="16,2 28,10 28,22 16,30 4,22 4,10"
+        stroke="#5aaca7"
+        strokeWidth="2"
+        fill="none"
+      />
+      <polygon
+        points="16,8 22,12 22,20 16,24 10,20 10,12"
+        fill="#5aaca7"
+        opacity="0.6"
+      />
+      <circle cx="16" cy="16" r="3" fill="#218380" />
+    </svg>
+  );
+}
 
 function Label({ children }: { children: React.ReactNode }) {
   return (
@@ -82,7 +117,7 @@ function BountyCard({ bounty, isDark }: { bounty: Bounty; isDark: boolean }) {
           <h3 className="text-text font-light text-base md:text-lg leading-snug group-hover:text-accent-mid transition-colors duration-200">
             {bounty.title}
           </h3>
-          <p className="mt-1.5 text-text-muted text-sm font-light truncate">{bounty.brand}</p>
+          <p className="mt-1.5 text-text-muted text-sm font-light truncate">{bounty.company.companyName}</p>
         </div>
         <div className="text-right flex-shrink-0">
           <p className="text-text font-light text-xl md:text-2xl">${bounty.budget.toLocaleString()}</p>
@@ -95,16 +130,18 @@ function BountyCard({ bounty, isDark }: { bounty: Bounty; isDark: boolean }) {
         </div>
       </div>
       <div className="mt-3 flex items-center gap-2">
-        <span
-          className="font-mono text-[10px] uppercase tracking-wider px-2 py-0.5"
-          style={{
-            background: isDark ? "rgba(255,255,255,0.05)" : "var(--accent-light)",
-            color: isDark ? "var(--text-muted)" : "var(--accent)",
-            borderRadius: isDark ? "1px" : "4px",
-          }}
-        >
-          {bounty.niche}
-        </span>
+        {bounty.niche && (
+          <span
+            className="font-mono text-[10px] uppercase tracking-wider px-2 py-0.5"
+            style={{
+              background: isDark ? "rgba(255,255,255,0.05)" : "var(--accent-light)",
+              color: isDark ? "var(--text-muted)" : "var(--accent)",
+              borderRadius: isDark ? "1px" : "4px",
+            }}
+          >
+            {bounty.niche}
+          </span>
+        )}
       </div>
     </Link>
   );
@@ -190,19 +227,34 @@ export default function Home() {
   const { theme, toggle } = useTheme();
   const isDark = theme === "dark";
 
+  const [bounties, setBounties] = useState<Bounty[]>([]);
+  const [loading, setLoading] = useState(true);
   const [platformFilter, setPlatformFilter] = useState("");
   const [nicheFilter, setNicheFilter] = useState("");
   const [payRange, setPayRange] = useState(0); // index into PAY_RANGES
 
+  useEffect(() => {
+    fetch("/api/bounties")
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data)) setBounties(data);
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
+
+  const PLATFORMS = ALL_PLATFORMS;
+  const NICHES = ALL_NICHES;
+
   const filtered = useMemo(() => {
-    return DUMMY_BOUNTIES.filter((b) => {
+    return bounties.filter((b) => {
       if (platformFilter && b.platform !== platformFilter) return false;
       if (nicheFilter && b.niche !== nicheFilter) return false;
       const range = PAY_RANGES[payRange];
       if (b.budget < range.min || b.budget > range.max) return false;
       return true;
     });
-  }, [platformFilter, nicheFilter, payRange]);
+  }, [bounties, platformFilter, nicheFilter, payRange]);
 
   const activeFilterCount = [platformFilter, nicheFilter, payRange > 0].filter(Boolean).length;
 
@@ -220,12 +272,7 @@ export default function Home() {
           }}
         >
           <div className="flex items-center gap-2">
-            <Hexagon
-              size={20}
-              className="text-accent-mid"
-              strokeWidth={1.5}
-              fill={isDark ? "none" : "var(--accent-light)"}
-            />
+            <AgoraLogo size={24} />
             <span className="text-base font-light tracking-tight text-text">agora</span>
           </div>
           <div className="flex items-center gap-3">
@@ -393,12 +440,7 @@ export default function Home() {
         >
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
-              <Hexagon
-                size={14}
-                className="text-accent-mid"
-                strokeWidth={1.5}
-                fill={isDark ? "none" : "var(--accent-light)"}
-              />
+              <AgoraLogo size={18} />
               <span className="text-sm text-text-muted font-light">agora</span>
             </div>
             <span className="font-mono text-[11px] text-text-muted uppercase tracking-wide">

@@ -2,9 +2,9 @@
 
 import { useTheme } from "../../theme-provider";
 import { CanvasBackdrop } from "../../canvas-backdrop";
-import { DUMMY_BOUNTIES } from "@/data/bounties";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { useState, useEffect } from "react";
 import {
   Sun,
   Moon,
@@ -12,7 +12,6 @@ import {
   ArrowLeft,
   ArrowRight,
   Clock,
-  DollarSign,
   Monitor,
   Tag,
   CheckCircle2,
@@ -20,6 +19,21 @@ import {
   Building2,
   FileText,
 } from "lucide-react";
+
+interface BountyData {
+  id: string;
+  title: string;
+  description: string;
+  platform: string;
+  contentType: string;
+  niche: string | null;
+  requirements: string | null;
+  budget: number;
+  deadline: string;
+  allowResubmission: boolean;
+  status: string;
+  company: { companyName: string; description: string | null };
+}
 
 function Label({ children }: { children: React.ReactNode }) {
   return (
@@ -56,15 +70,43 @@ export default function BountyDetail() {
   const params = useParams();
   const id = params.id as string;
 
-  const bounty = DUMMY_BOUNTIES.find((b) => b.id === id);
+  const [bounty, setBounty] = useState<BountyData | null>(null);
+  const [relatedBounties, setRelatedBounties] = useState<BountyData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
 
-  const relatedBounties = bounty
-    ? DUMMY_BOUNTIES.filter(
-        (b) =>
-          b.id !== bounty.id &&
-          (b.niche === bounty.niche || b.platform === bounty.platform)
-      ).slice(0, 3)
-    : [];
+  useEffect(() => {
+    fetch(`/api/bounties/${id}`)
+      .then((r) => {
+        if (!r.ok) { setNotFound(true); return null; }
+        return r.json();
+      })
+      .then((data) => {
+        if (data && !data.error) setBounty(data);
+        else setNotFound(true);
+      })
+      .catch(() => setNotFound(true))
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  useEffect(() => {
+    if (!bounty) return;
+    fetch("/api/bounties")
+      .then((r) => r.json())
+      .then((all: BountyData[]) => {
+        if (!Array.isArray(all)) return;
+        setRelatedBounties(
+          all
+            .filter((b) => b.id !== bounty.id && (b.niche === bounty.niche || b.platform === bounty.platform))
+            .slice(0, 3)
+        );
+      })
+      .catch(() => {});
+  }, [bounty]);
+
+  const requirementsList = bounty?.requirements?.split("\n").filter(Boolean) || [];
+  // Strip [DUMMY] prefix from description for display
+  const displayDescription = bounty?.description?.replace("[DUMMY] ", "") || "";
 
   return (
     <>
@@ -104,8 +146,11 @@ export default function BountyDetail() {
           </button>
         </nav>
 
-        {!bounty ? (
-          /* 404 */
+        {loading ? (
+          <section className="pt-32 pb-24 px-6 md:px-12 lg:px-24 text-center">
+            <p className="text-text-muted text-lg font-light">Loading...</p>
+          </section>
+        ) : notFound || !bounty ? (
           <section className="pt-32 pb-24 px-6 md:px-12 lg:px-24 text-center">
             <h1 className="text-text font-extralight text-4xl md:text-5xl mb-4">Bounty not found</h1>
             <p className="text-text-muted text-lg font-light mb-8">
@@ -131,12 +176,11 @@ export default function BountyDetail() {
               </Link>
             </div>
 
-            {/* Main content — asymmetric layout */}
+            {/* Main content */}
             <section className="px-6 md:px-12 lg:px-24 pb-16">
               <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-8 lg:gap-12 items-start">
-                {/* Left column — main info */}
+                {/* Left column */}
                 <div>
-                  {/* Meta tags */}
                   <div className="flex flex-wrap items-center gap-3 mb-4">
                     <div className="flex items-center gap-2">
                       <PlatformIcon platform={bounty.platform} />
@@ -144,20 +188,23 @@ export default function BountyDetail() {
                     </div>
                     <span className="text-text-muted text-[11px]">·</span>
                     <Label>{bounty.contentType}</Label>
-                    <span className="text-text-muted text-[11px]">·</span>
-                    <span
-                      className="font-mono text-[10px] uppercase tracking-wider px-2 py-0.5"
-                      style={{
-                        background: isDark ? "rgba(255,255,255,0.05)" : "var(--accent-light)",
-                        color: isDark ? "var(--text-muted)" : "var(--accent)",
-                        borderRadius: isDark ? "1px" : "4px",
-                      }}
-                    >
-                      {bounty.niche}
-                    </span>
+                    {bounty.niche && (
+                      <>
+                        <span className="text-text-muted text-[11px]">·</span>
+                        <span
+                          className="font-mono text-[10px] uppercase tracking-wider px-2 py-0.5"
+                          style={{
+                            background: isDark ? "rgba(255,255,255,0.05)" : "var(--accent-light)",
+                            color: isDark ? "var(--text-muted)" : "var(--accent)",
+                            borderRadius: isDark ? "1px" : "4px",
+                          }}
+                        >
+                          {bounty.niche}
+                        </span>
+                      </>
+                    )}
                   </div>
 
-                  {/* Title */}
                   <h1
                     className="text-text font-extralight leading-[1.1] mb-3"
                     style={{ fontSize: "clamp(1.75rem, 4vw, 2.75rem)" }}
@@ -165,59 +212,59 @@ export default function BountyDetail() {
                     {bounty.title}
                   </h1>
 
-                  {/* Brand */}
                   <div className="flex items-center gap-2 mb-8">
                     <Building2 size={14} className="text-text-muted" />
-                    <span className="text-text-muted text-sm font-light">by {bounty.brand}</span>
+                    <span className="text-text-muted text-sm font-light">by {bounty.company.companyName}</span>
                   </div>
 
-                  {/* Full description */}
                   <div className="mb-10">
                     <div className="flex items-center gap-2 mb-3">
                       <FileText size={14} className="text-accent-mid" />
                       <Label>Brief</Label>
                     </div>
                     <p className="text-text text-base leading-relaxed font-light">
-                      {bounty.fullDescription}
+                      {displayDescription}
                     </p>
                   </div>
 
-                  {/* Requirements */}
-                  <div className="mb-10">
-                    <div className="flex items-center gap-2 mb-4">
-                      <CheckCircle2 size={14} className="text-accent-mid" />
-                      <Label>Requirements</Label>
+                  {requirementsList.length > 0 && (
+                    <div className="mb-10">
+                      <div className="flex items-center gap-2 mb-4">
+                        <CheckCircle2 size={14} className="text-accent-mid" />
+                        <Label>Requirements</Label>
+                      </div>
+                      <ul className="space-y-2.5">
+                        {requirementsList.map((req, i) => (
+                          <li key={i} className="flex items-start gap-3">
+                            <span
+                              className="mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0"
+                              style={{ background: "var(--accent-mid)" }}
+                            />
+                            <span className="text-text text-sm font-light leading-relaxed">{req}</span>
+                          </li>
+                        ))}
+                      </ul>
                     </div>
-                    <ul className="space-y-2.5">
-                      {bounty.requirements.map((req, i) => (
-                        <li key={i} className="flex items-start gap-3">
-                          <span
-                            className="mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0"
-                            style={{ background: "var(--accent-mid)" }}
-                          />
-                          <span className="text-text text-sm font-light leading-relaxed">{req}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
+                  )}
 
-                  {/* About the brand */}
-                  <div
-                    className="p-5 md:p-6"
-                    style={{
-                      background: "var(--surface)",
-                      border: "1px solid var(--border)",
-                      borderRadius: isDark ? "2px" : "10px",
-                    }}
-                  >
-                    <div className="flex items-center gap-2 mb-3">
-                      <Building2 size={14} className="text-accent-mid" />
-                      <Label>About {bounty.brand}</Label>
+                  {bounty.company.description && (
+                    <div
+                      className="p-5 md:p-6"
+                      style={{
+                        background: "var(--surface)",
+                        border: "1px solid var(--border)",
+                        borderRadius: isDark ? "2px" : "10px",
+                      }}
+                    >
+                      <div className="flex items-center gap-2 mb-3">
+                        <Building2 size={14} className="text-accent-mid" />
+                        <Label>About {bounty.company.companyName}</Label>
+                      </div>
+                      <p className="text-text-muted text-sm font-light leading-relaxed">
+                        {bounty.company.description.replace("[DUMMY] ", "")}
+                      </p>
                     </div>
-                    <p className="text-text-muted text-sm font-light leading-relaxed">
-                      {bounty.brandDescription}
-                    </p>
-                  </div>
+                  )}
                 </div>
 
                 {/* Right column — sticky sidebar */}
@@ -231,7 +278,6 @@ export default function BountyDetail() {
                       boxShadow: isDark ? "none" : "0 4px 16px rgba(45,41,38,0.08)",
                     }}
                   >
-                    {/* Budget */}
                     <div className="mb-5">
                       <Label>Budget</Label>
                       <p className="text-text font-extralight text-3xl mt-1">
@@ -239,7 +285,6 @@ export default function BountyDetail() {
                       </p>
                     </div>
 
-                    {/* Deadline */}
                     <div
                       className="flex items-center justify-between py-4 mb-4"
                       style={{ borderTop: "1px solid var(--border)", borderBottom: "1px solid var(--border)" }}
@@ -265,7 +310,6 @@ export default function BountyDetail() {
                       </div>
                     </div>
 
-                    {/* Details */}
                     <div className="space-y-3 mb-6">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
@@ -283,7 +327,6 @@ export default function BountyDetail() {
                       </div>
                     </div>
 
-                    {/* CTA */}
                     <Link
                       href={`/bounty/${bounty.id}/apply`}
                       className="flex items-center justify-center gap-2 w-full px-5 py-3 text-sm font-medium rounded-sm transition-all hover:opacity-90"
@@ -326,7 +369,7 @@ export default function BountyDetail() {
                         {b.title}
                       </h3>
                       <div className="flex items-center justify-between mt-3">
-                        <span className="text-text-muted text-xs font-light">{b.brand}</span>
+                        <span className="text-text-muted text-xs font-light">{b.company.companyName}</span>
                         <span className="text-text font-light text-lg">${b.budget.toLocaleString()}</span>
                       </div>
                     </Link>
