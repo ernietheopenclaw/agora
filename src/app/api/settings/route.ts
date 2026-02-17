@@ -27,6 +27,7 @@ export async function GET() {
     email: user.email,
     role: user.role,
     displayName,
+    bio: user.creatorProfile?.bio || "",
     tiktokHandle: user.creatorProfile?.tiktokHandle || "",
     instagramHandle: user.creatorProfile?.instagramHandle || "",
     youtubeHandle: user.creatorProfile?.youtubeHandle || "",
@@ -42,7 +43,7 @@ export async function PUT(req: Request) {
   }
 
   const body = await req.json();
-  const { displayName, tiktokHandle, instagramHandle, youtubeHandle, xHandle } = body;
+  const { displayName, bio, tiktokHandle, instagramHandle, youtubeHandle, xHandle } = body;
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
@@ -59,6 +60,7 @@ export async function PUT(req: Request) {
       where: { userId: user.id },
       data: {
         displayName: displayName || user.creatorProfile.displayName,
+        bio: bio !== undefined ? bio : user.creatorProfile.bio,
         tiktokHandle: tiktokHandle || null,
         instagramHandle: instagramHandle || null,
         youtubeHandle: youtubeHandle || null,
@@ -70,6 +72,7 @@ export async function PUT(req: Request) {
       data: {
         userId: user.id,
         displayName: displayName || user.email,
+        bio: bio || null,
         tiktokHandle: tiktokHandle || null,
         instagramHandle: instagramHandle || null,
         youtubeHandle: youtubeHandle || null,

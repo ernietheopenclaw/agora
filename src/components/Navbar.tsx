@@ -4,7 +4,7 @@ import { useSession, signOut } from "next-auth/react";
 import { useTheme } from "../app/theme-provider";
 import { SpinningLogo } from "./SpinningLogo";
 import { AgoraLogo } from "./AgoraLogo";
-import { Sun, Moon, ArrowRight, LogOut, Settings, ChevronDown, BarChart3, Crosshair } from "lucide-react";
+import { Sun, Moon, ArrowRight, LogOut, Settings, ChevronDown, BarChart3, Crosshair, UserCircle } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
@@ -77,6 +77,7 @@ export function Navbar() {
               {[
                 { href: "/", label: "Bounties", icon: Crosshair },
                 { href: "/stats", label: "Stats", icon: BarChart3 },
+                { href: "/profile", label: "Profile", icon: UserCircle },
               ].map(({ href, label, icon: Icon }) => {
                 const active = pathname === href;
                 return (
@@ -143,6 +144,14 @@ export function Navbar() {
                   >
                     <BarChart3 size={14} className="text-text-muted" />
                     Stats
+                  </Link>
+                  <Link
+                    href="/profile"
+                    onClick={() => setDropdownOpen(false)}
+                    className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-text font-light transition-colors duration-150 hover:bg-[var(--border)]"
+                  >
+                    <UserCircle size={14} className="text-text-muted" />
+                    Profile
                   </Link>
                   <div style={{ height: 1, background: "var(--border)", margin: "4px 0" }} />
                 </div>

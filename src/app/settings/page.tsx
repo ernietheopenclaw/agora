@@ -1,65 +1,12 @@
 "use client";
 
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useTheme } from "../theme-provider";
 import { Navbar } from "../../components/Navbar";
 import { CanvasBackdrop } from "../canvas-backdrop";
-import { Check, Loader2, User, Link as LinkIcon } from "lucide-react";
-
-interface SettingsData {
-  email: string;
-  role: string;
-  displayName: string;
-  tiktokHandle: string;
-  instagramHandle: string;
-  youtubeHandle: string;
-  xHandle: string;
-}
-
-const platforms = [
-  {
-    key: "tiktokHandle" as const,
-    name: "TikTok",
-    color: "#25F4EE",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-        <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.27 6.27 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.34-6.34V8.75a8.18 8.18 0 004.76 1.52V6.84a4.84 4.84 0 01-1-.15z" />
-      </svg>
-    ),
-  },
-  {
-    key: "instagramHandle" as const,
-    name: "Instagram",
-    color: "#C13584",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-        <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z" />
-      </svg>
-    ),
-  },
-  {
-    key: "youtubeHandle" as const,
-    name: "YouTube",
-    color: "#FF0000",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-        <path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
-      </svg>
-    ),
-  },
-  {
-    key: "xHandle" as const,
-    name: "X",
-    color: "#808080",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-      </svg>
-    ),
-  },
-];
+import { Check, Loader2, Mail, Lock, Trash2, AlertTriangle } from "lucide-react";
 
 export default function SettingsPage() {
   const { data: session, status } = useSession();
@@ -67,17 +14,22 @@ export default function SettingsPage() {
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [data, setData] = useState<SettingsData | null>(null);
-  const [displayName, setDisplayName] = useState("");
-  const [handles, setHandles] = useState({
-    tiktokHandle: "",
-    instagramHandle: "",
-    youtubeHandle: "",
-    xHandle: "",
-  });
+  const [email, setEmail] = useState("");
+  const [newEmail, setNewEmail] = useState("");
+  const [emailSaving, setEmailSaving] = useState(false);
+  const [emailSaved, setEmailSaved] = useState(false);
+  const [emailError, setEmailError] = useState("");
+
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [pwSaving, setPwSaving] = useState(false);
+  const [pwSaved, setPwSaved] = useState(false);
+  const [pwError, setPwError] = useState("");
+
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState("");
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login");
@@ -87,40 +39,82 @@ export default function SettingsPage() {
     if (status === "authenticated") {
       fetch("/api/settings")
         .then((r) => r.json())
-        .then((d: SettingsData) => {
-          setData(d);
-          setDisplayName(d.displayName);
-          setHandles({
-            tiktokHandle: d.tiktokHandle,
-            instagramHandle: d.instagramHandle,
-            youtubeHandle: d.youtubeHandle,
-            xHandle: d.xHandle,
-          });
-          setLoading(false);
-        })
-        .catch(() => setLoading(false));
+        .then((d) => {
+          setEmail(d.email);
+          setNewEmail(d.email);
+        });
     }
   }, [status]);
 
-  const handleSave = async () => {
-    setSaving(true);
-    setSaved(false);
+  const handleEmailSave = async () => {
+    setEmailSaving(true);
+    setEmailError("");
+    setEmailSaved(false);
     try {
-      const res = await fetch("/api/settings", {
+      const res = await fetch("/api/settings/email", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ displayName, ...handles }),
+        body: JSON.stringify({ email: newEmail }),
       });
       if (res.ok) {
-        setSaved(true);
-        setTimeout(() => setSaved(false), 3000);
+        setEmail(newEmail);
+        setEmailSaved(true);
+        setTimeout(() => setEmailSaved(false), 3000);
+      } else {
+        const data = await res.json();
+        setEmailError(data.error || "Failed to update email");
       }
     } finally {
-      setSaving(false);
+      setEmailSaving(false);
     }
   };
 
-  if (status === "loading" || loading) {
+  const handlePasswordSave = async () => {
+    setPwError("");
+    if (newPassword !== confirmPassword) {
+      setPwError("Passwords do not match");
+      return;
+    }
+    if (newPassword.length < 6) {
+      setPwError("Password must be at least 6 characters");
+      return;
+    }
+    setPwSaving(true);
+    setPwSaved(false);
+    try {
+      const res = await fetch("/api/settings/password", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+      if (res.ok) {
+        setPwSaved(true);
+        setCurrentPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+        setTimeout(() => setPwSaved(false), 3000);
+      } else {
+        const data = await res.json();
+        setPwError(data.error || "Failed to update password");
+      }
+    } finally {
+      setPwSaving(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    setDeleting(true);
+    try {
+      const res = await fetch("/api/settings/account", { method: "DELETE" });
+      if (res.ok) {
+        await signOut({ callbackUrl: "/" });
+      }
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  if (status === "loading") {
     return (
       <>
         <CanvasBackdrop />
@@ -134,12 +128,7 @@ export default function SettingsPage() {
     );
   }
 
-  if (!session || !data) return null;
-
-  const roleBadgeColor =
-    data.role.toUpperCase() === "CREATOR"
-      ? { bg: "rgba(90,172,167,0.15)", text: "#5aaca7" }
-      : { bg: "rgba(210,168,67,0.15)", text: "#d4a843" };
+  if (!session) return null;
 
   const inputStyle = {
     background: "var(--surface)",
@@ -153,6 +142,13 @@ export default function SettingsPage() {
     transition: "border-color 0.15s ease",
   };
 
+  const cardStyle = {
+    background: "var(--surface)",
+    border: "1px solid var(--border)",
+    borderRadius: isDark ? "2px" : "10px",
+    boxShadow: isDark ? "none" : "0 1px 3px rgba(45,41,38,0.04)",
+  };
+
   return (
     <>
       <CanvasBackdrop />
@@ -162,40 +158,62 @@ export default function SettingsPage() {
           <div className="max-w-2xl mx-auto">
             <h1 className="text-text font-extralight text-3xl mb-8">Settings</h1>
 
-            {/* Profile Section */}
-            <div
-              className="p-6 md:p-8 mb-5"
-              style={{
-                background: "var(--surface)",
-                border: "1px solid var(--border)",
-                borderRadius: isDark ? "2px" : "10px",
-                boxShadow: isDark ? "none" : "0 1px 3px rgba(45,41,38,0.04)",
-              }}
-            >
+            {/* Email Section */}
+            <div className="p-6 md:p-8 mb-5" style={cardStyle}>
               <div className="flex items-center gap-2.5 mb-6">
-                <User size={16} className="text-text-muted" />
-                <h2 className="text-text font-light text-lg">Profile</h2>
-                <span
-                  className="ml-auto text-xs font-mono uppercase tracking-wider px-2.5 py-1"
-                  style={{
-                    background: roleBadgeColor.bg,
-                    color: roleBadgeColor.text,
-                    borderRadius: isDark ? "2px" : "6px",
-                  }}
-                >
-                  {data.role.toUpperCase()}
-                </span>
+                <Mail size={16} className="text-text-muted" />
+                <h2 className="text-text font-light text-lg">Email</h2>
               </div>
-
               <div className="space-y-4">
                 <div>
                   <label className="block text-xs font-mono uppercase tracking-wider text-text-muted mb-2">
-                    Display Name
+                    Email Address
                   </label>
                   <input
-                    type="text"
-                    value={displayName}
-                    onChange={(e) => setDisplayName(e.target.value)}
+                    type="email"
+                    value={newEmail}
+                    onChange={(e) => setNewEmail(e.target.value)}
+                    style={inputStyle}
+                    onFocus={(e) => (e.target.style.borderColor = "var(--border-strong)")}
+                    onBlur={(e) => (e.target.style.borderColor = "var(--border)")}
+                  />
+                </div>
+                {emailError && (
+                  <p className="text-sm" style={{ color: "#e25555" }}>{emailError}</p>
+                )}
+                <button
+                  onClick={handleEmailSave}
+                  disabled={emailSaving || newEmail === email}
+                  className="px-5 py-2 text-sm font-medium transition-all cursor-pointer flex items-center gap-2"
+                  style={{
+                    background: newEmail !== email ? "var(--accent, #5aaca7)" : "var(--border)",
+                    color: newEmail !== email ? "#fff" : "var(--text-muted)",
+                    borderRadius: isDark ? "2px" : "8px",
+                    opacity: emailSaving ? 0.7 : 1,
+                    border: "none",
+                  }}
+                >
+                  {emailSaving ? <Loader2 size={14} className="animate-spin" /> : emailSaved ? <Check size={14} /> : null}
+                  {emailSaving ? "Saving..." : emailSaved ? "Updated!" : "Update Email"}
+                </button>
+              </div>
+            </div>
+
+            {/* Password Section */}
+            <div className="p-6 md:p-8 mb-5" style={cardStyle}>
+              <div className="flex items-center gap-2.5 mb-6">
+                <Lock size={16} className="text-text-muted" />
+                <h2 className="text-text font-light text-lg">Password</h2>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-mono uppercase tracking-wider text-text-muted mb-2">
+                    Current Password
+                  </label>
+                  <input
+                    type="password"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
                     style={inputStyle}
                     onFocus={(e) => (e.target.style.borderColor = "var(--border-strong)")}
                     onBlur={(e) => (e.target.style.borderColor = "var(--border)")}
@@ -203,129 +221,146 @@ export default function SettingsPage() {
                 </div>
                 <div>
                   <label className="block text-xs font-mono uppercase tracking-wider text-text-muted mb-2">
-                    Email
+                    New Password
                   </label>
                   <input
-                    type="text"
-                    value={data.email}
-                    readOnly
-                    style={{ ...inputStyle, opacity: 0.6, cursor: "not-allowed" }}
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    style={inputStyle}
+                    onFocus={(e) => (e.target.style.borderColor = "var(--border-strong)")}
+                    onBlur={(e) => (e.target.style.borderColor = "var(--border)")}
                   />
                 </div>
+                <div>
+                  <label className="block text-xs font-mono uppercase tracking-wider text-text-muted mb-2">
+                    Confirm New Password
+                  </label>
+                  <input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    style={inputStyle}
+                    onFocus={(e) => (e.target.style.borderColor = "var(--border-strong)")}
+                    onBlur={(e) => (e.target.style.borderColor = "var(--border)")}
+                  />
+                </div>
+                {pwError && (
+                  <p className="text-sm" style={{ color: "#e25555" }}>{pwError}</p>
+                )}
+                <button
+                  onClick={handlePasswordSave}
+                  disabled={pwSaving || !currentPassword || !newPassword}
+                  className="px-5 py-2 text-sm font-medium transition-all cursor-pointer flex items-center gap-2"
+                  style={{
+                    background: currentPassword && newPassword ? "var(--accent, #5aaca7)" : "var(--border)",
+                    color: currentPassword && newPassword ? "#fff" : "var(--text-muted)",
+                    borderRadius: isDark ? "2px" : "8px",
+                    opacity: pwSaving ? 0.7 : 1,
+                    border: "none",
+                  }}
+                >
+                  {pwSaving ? <Loader2 size={14} className="animate-spin" /> : pwSaved ? <Check size={14} /> : null}
+                  {pwSaving ? "Saving..." : pwSaved ? "Updated!" : "Change Password"}
+                </button>
               </div>
             </div>
 
-            {/* Social Accounts Section */}
+            {/* Danger Zone */}
             <div
-              className="p-6 md:p-8 mb-5"
+              className="p-6 md:p-8"
               style={{
-                background: "var(--surface)",
-                border: "1px solid var(--border)",
-                borderRadius: isDark ? "2px" : "10px",
-                boxShadow: isDark ? "none" : "0 1px 3px rgba(45,41,38,0.04)",
+                ...cardStyle,
+                border: isDark ? "1px solid rgba(226,85,85,0.3)" : "1px solid rgba(226,85,85,0.25)",
               }}
             >
-              <div className="flex items-center gap-2.5 mb-6">
-                <LinkIcon size={16} className="text-text-muted" />
-                <h2 className="text-text font-light text-lg">Connected Accounts</h2>
+              <div className="flex items-center gap-2.5 mb-3">
+                <Trash2 size={16} style={{ color: "#e25555" }} />
+                <h2 className="font-light text-lg" style={{ color: "#e25555" }}>Danger Zone</h2>
               </div>
-
-              <div className="space-y-3">
-                {platforms.map((p) => {
-                  const value = handles[p.key];
-                  const isConnected = !!value && value.trim().length > 0;
-
-                  return (
-                    <div
-                      key={p.key}
-                      className="flex items-center gap-4 p-4"
-                      style={{
-                        background: isDark ? "rgba(255,255,255,0.02)" : "var(--surface-raised, #e8e4df)",
-                        border: "1px solid var(--border)",
-                        borderRadius: isDark ? "2px" : "8px",
-                      }}
-                    >
-                      <div
-                        className="flex items-center justify-center w-9 h-9 flex-shrink-0"
-                        style={{
-                          color: p.color,
-                          borderRadius: isDark ? "2px" : "8px",
-                          background: `${p.color}15`,
-                        }}
-                      >
-                        {p.icon}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <span className="text-text text-sm font-light block mb-1">{p.name}</span>
-                        <input
-                          type="text"
-                          placeholder="@username"
-                          value={value}
-                          onChange={(e) =>
-                            setHandles((prev) => ({ ...prev, [p.key]: e.target.value }))
-                          }
-                          style={{
-                            ...inputStyle,
-                            padding: "6px 10px",
-                            fontSize: "13px",
-                            background: isDark ? "rgba(255,255,255,0.03)" : "var(--bg)",
-                          }}
-                          onFocus={(e) => (e.target.style.borderColor = p.color)}
-                          onBlur={(e) => (e.target.style.borderColor = "var(--border)")}
-                        />
-                      </div>
-                      <div
-                        className="flex-shrink-0 text-xs font-mono uppercase tracking-wider px-3 py-1.5"
-                        style={{
-                          borderRadius: isDark ? "2px" : "6px",
-                          background: isConnected ? `${p.color}20` : "transparent",
-                          color: isConnected ? p.color : "var(--text-muted)",
-                          border: isConnected ? "none" : "1px solid var(--border)",
-                        }}
-                      >
-                        {isConnected ? (
-                          <span className="flex items-center gap-1">
-                            <Check size={12} /> Connected
-                          </span>
-                        ) : (
-                          "Not linked"
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Save Button */}
-            <div className="flex items-center gap-3">
+              <p className="text-text-muted text-sm font-light mb-4">
+                Permanently delete your account and all associated data. This action cannot be undone.
+              </p>
               <button
-                onClick={handleSave}
-                disabled={saving}
-                className="px-6 py-2.5 text-sm font-medium transition-all cursor-pointer flex items-center gap-2"
+                onClick={() => setShowDeleteModal(true)}
+                className="px-5 py-2 text-sm font-medium transition-all cursor-pointer"
                 style={{
-                  background: "var(--accent, #5aaca7)",
-                  color: "#fff",
+                  background: isDark ? "rgba(226,85,85,0.15)" : "rgba(226,85,85,0.1)",
+                  color: "#e25555",
                   borderRadius: isDark ? "2px" : "8px",
-                  opacity: saving ? 0.7 : 1,
-                  border: "none",
+                  border: "1px solid rgba(226,85,85,0.3)",
                 }}
               >
-                {saving ? (
-                  <Loader2 size={14} className="animate-spin" />
-                ) : saved ? (
-                  <Check size={14} />
-                ) : null}
-                {saving ? "Saving..." : saved ? "Saved!" : "Save Changes"}
+                Delete Account
               </button>
-              {saved && (
-                <span className="text-sm text-text-muted font-light">
-                  All changes saved successfully
-                </span>
-              )}
             </div>
           </div>
         </div>
+
+        {/* Delete Confirmation Modal */}
+        {showDeleteModal && (
+          <div
+            className="fixed inset-0 flex items-center justify-center px-4"
+            style={{ zIndex: 100, background: "rgba(0,0,0,0.6)" }}
+            onClick={() => setShowDeleteModal(false)}
+          >
+            <div
+              className="p-6 md:p-8 max-w-md w-full"
+              style={{
+                ...cardStyle,
+                background: "var(--bg)",
+                boxShadow: "0 16px 48px rgba(0,0,0,0.3)",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <AlertTriangle size={20} style={{ color: "#e25555" }} />
+                <h3 className="text-text font-light text-lg">Delete Account</h3>
+              </div>
+              <p className="text-text-muted text-sm font-light mb-4">
+                This will permanently delete your account, profile, and all data. Type <strong className="text-text">DELETE</strong> to confirm.
+              </p>
+              <input
+                type="text"
+                value={deleteConfirm}
+                onChange={(e) => setDeleteConfirm(e.target.value)}
+                placeholder='Type "DELETE"'
+                style={inputStyle}
+                onFocus={(e) => (e.target.style.borderColor = "rgba(226,85,85,0.5)")}
+                onBlur={(e) => (e.target.style.borderColor = "var(--border)")}
+              />
+              <div className="flex gap-3 mt-5">
+                <button
+                  onClick={() => { setShowDeleteModal(false); setDeleteConfirm(""); }}
+                  className="px-5 py-2 text-sm font-medium cursor-pointer transition-colors"
+                  style={{
+                    background: "var(--surface)",
+                    color: "var(--text)",
+                    borderRadius: isDark ? "2px" : "8px",
+                    border: "1px solid var(--border)",
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteAccount}
+                  disabled={deleteConfirm !== "DELETE" || deleting}
+                  className="px-5 py-2 text-sm font-medium cursor-pointer transition-all flex items-center gap-2"
+                  style={{
+                    background: deleteConfirm === "DELETE" ? "#e25555" : "var(--border)",
+                    color: deleteConfirm === "DELETE" ? "#fff" : "var(--text-muted)",
+                    borderRadius: isDark ? "2px" : "8px",
+                    border: "none",
+                    opacity: deleting ? 0.7 : 1,
+                  }}
+                >
+                  {deleting && <Loader2 size={14} className="animate-spin" />}
+                  {deleting ? "Deleting..." : "Delete Account"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </>
   );
