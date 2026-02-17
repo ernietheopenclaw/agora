@@ -26,12 +26,27 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    setFieldErrors({});
+
+    const errors: Record<string, string> = {};
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      errors.email = "Please enter a valid email";
+    }
+    if (password.length < 1) {
+      errors.password = "Password is required";
+    }
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return;
+    }
+
     setLoading(true);
 
     const res = await signIn("credentials", {
@@ -103,19 +118,21 @@ export default function LoginPage() {
                 <input
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
+                  onChange={(e) => { setEmail(e.target.value); setFieldErrors((fe) => { const n = { ...fe }; delete n.email; return n; }); }}
                   className="w-full pl-10 pr-4 py-2.5 text-sm text-text outline-none transition-colors"
                   style={{
                     background: "var(--surface)",
-                    border: "1px solid var(--border)",
+                    border: `1px solid ${fieldErrors.email ? "#c67a5c" : "var(--border)"}`,
                     borderRadius: isDark ? "2px" : "8px",
                     fontFamily: "Inter, system-ui, sans-serif",
                   }}
-                  onFocus={(e) => (e.target.style.borderColor = "var(--accent-mid)")}
-                  onBlur={(e) => (e.target.style.borderColor = "var(--border)")}
+                  onFocus={(e) => (e.target.style.borderColor = fieldErrors.email ? "#c67a5c" : "var(--accent-mid)")}
+                  onBlur={(e) => (e.target.style.borderColor = fieldErrors.email ? "#c67a5c" : "var(--border)")}
                   placeholder="you@example.com"
                 />
+              </div>
+              <div className="h-5 flex items-center">
+                <span className={`text-xs transition-opacity duration-200 ${fieldErrors.email ? "opacity-100" : "opacity-0"}`} style={{ color: "#c67a5c" }}>{fieldErrors.email || "\u00A0"}</span>
               </div>
             </div>
 
@@ -126,19 +143,21 @@ export default function LoginPage() {
                 <input
                   type="password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
+                  onChange={(e) => { setPassword(e.target.value); setFieldErrors((fe) => { const n = { ...fe }; delete n.password; return n; }); }}
                   className="w-full pl-10 pr-4 py-2.5 text-sm text-text outline-none transition-colors"
                   style={{
                     background: "var(--surface)",
-                    border: "1px solid var(--border)",
+                    border: `1px solid ${fieldErrors.password ? "#c67a5c" : "var(--border)"}`,
                     borderRadius: isDark ? "2px" : "8px",
                     fontFamily: "Inter, system-ui, sans-serif",
                   }}
-                  onFocus={(e) => (e.target.style.borderColor = "var(--accent-mid)")}
-                  onBlur={(e) => (e.target.style.borderColor = "var(--border)")}
+                  onFocus={(e) => (e.target.style.borderColor = fieldErrors.password ? "#c67a5c" : "var(--accent-mid)")}
+                  onBlur={(e) => (e.target.style.borderColor = fieldErrors.password ? "#c67a5c" : "var(--border)")}
                   placeholder="••••••••"
                 />
+              </div>
+              <div className="h-5 flex items-center">
+                <span className={`text-xs transition-opacity duration-200 ${fieldErrors.password ? "opacity-100" : "opacity-0"}`} style={{ color: "#c67a5c" }}>{fieldErrors.password || "\u00A0"}</span>
               </div>
             </div>
 

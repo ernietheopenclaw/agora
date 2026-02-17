@@ -120,7 +120,6 @@ export default function CreatorSignupPage() {
                     type={f.type}
                     value={form[f.key as keyof typeof form]}
                     onChange={(e) => { update(f.key, e.target.value); setFieldErrors((fe) => { const n = { ...fe }; delete n[f.key]; return n; }); }}
-                    required={f.required}
                     className="w-full pl-10 pr-4 py-2.5 text-sm text-text rounded-sm outline-none transition-colors"
                     style={{ background: "var(--surface)", border: `1px solid ${fieldErrors[f.key] ? "#c67a5c" : "var(--border)"}`, fontFamily: "Inter, system-ui, sans-serif" }}
                     onFocus={(e) => (e.target.style.borderColor = fieldErrors[f.key] ? "#c67a5c" : "var(--accent-mid)")}
@@ -128,7 +127,9 @@ export default function CreatorSignupPage() {
                     placeholder={f.placeholder}
                   />
                 </div>
-                {fieldErrors[f.key] && <span className="text-xs" style={{ color: "#c67a5c" }}>{fieldErrors[f.key]}</span>}
+                <div className="h-5 flex items-center">
+                  <span className={`text-xs transition-opacity duration-200 ${fieldErrors[f.key] ? "opacity-100" : "opacity-0"}`} style={{ color: "#c67a5c" }}>{fieldErrors[f.key] || "\u00A0"}</span>
+                </div>
               </div>
             ))}
 
