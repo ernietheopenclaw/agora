@@ -605,13 +605,12 @@ function SignupPage() {
     <div className="min-h-screen flex flex-col" style={{ background: "var(--bg)" }}>
       <nav className="flex items-center justify-between px-6 py-4 md:px-12" style={{ borderBottom: "1px solid var(--border)" }}>
         <Link href="/" className="flex items-center gap-2 no-underline">
-          <AgoraLogo size={20} />
+          <AgoraLogo size={24} />
           <span className="text-base font-light tracking-tight text-text">agora</span>
         </Link>
         <button
           onClick={toggle}
-          className="flex items-center justify-center w-8 h-8 rounded-sm transition-colors"
-          style={{ background: "var(--surface)" }}
+          className="flex items-center justify-center transition-colors cursor-pointer"
           aria-label="Toggle theme"
         >
           {isDark ? <Sun size={16} strokeWidth={1.5} className="text-text-muted" /> : <Moon size={16} strokeWidth={1.5} fill="var(--text-muted)" className="text-text-muted" />}

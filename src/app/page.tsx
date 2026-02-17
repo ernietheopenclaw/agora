@@ -548,8 +548,7 @@ export default function Home() {
             </a>
             <button
               onClick={toggle}
-              className="flex items-center justify-center w-8 h-8 rounded-sm transition-colors cursor-pointer"
-              style={{ background: "var(--surface)" }}
+              className="flex items-center justify-center transition-colors cursor-pointer"
               aria-label="Toggle theme"
             >
               {isDark ? (

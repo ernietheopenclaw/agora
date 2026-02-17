@@ -158,14 +158,13 @@ export default function BountyDetail() {
         >
           <div className="flex items-center gap-2">
             <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-              <AgoraLogo size={20} />
+              <AgoraLogo size={24} />
               <span className="text-base font-light tracking-tight text-text">agora</span>
             </Link>
           </div>
           <button
             onClick={toggle}
-            className="flex items-center justify-center w-8 h-8 rounded-sm transition-colors"
-            style={{ background: "var(--surface)" }}
+            className="flex items-center justify-center transition-colors cursor-pointer"
             aria-label="Toggle theme"
           >
             {isDark ? (
