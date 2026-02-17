@@ -391,11 +391,6 @@ export default function Home() {
           <div className="flex items-center gap-2">
             <SpinningLogo size={24} />
             <span className="text-base font-light tracking-tight text-text">agora</span>
-            <span className="group/spin ml-2 inline-flex cursor-pointer">
-              <span className="inline-flex group-hover/spin:animate-[spin_450ms_ease-in-out_infinite]">
-                <AgoraLogo size={24} />
-              </span>
-            </span>
           </div>
           <div className="flex items-center gap-3">
             <a
